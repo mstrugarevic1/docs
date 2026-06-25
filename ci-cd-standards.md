@@ -19,10 +19,6 @@ This document defines the standard structure, quality gates, and deployment prac
 
 ![CI/CD pipeline flow](images/cicd.png)
 
-```text
-Commit -> Build -> Test -> Scan -> Package -> Deploy to Dev -> Promote -> Deploy to Production
-```
-
 ## Pipeline Stages
 
 ### 1. Build
