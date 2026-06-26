@@ -2,6 +2,18 @@
 
 This checklist provides a structured approach for migrating workloads into or between Kubernetes clusters.
 
+## Table of Contents
+
+- [1. Discovery & Scope](#1-discovery--scope)
+- [2. Target State Design](#2-target-state-design)
+- [3. Workload Configuration](#3-workload-configuration)
+- [4. Connectivity & Networking](#4-connectivity--networking)
+- [5. Storage & State](#5-storage--state)
+- [6. CI/CD & Automation](#6-cicd--automation)
+- [7. Observability & Validation](#7-observability--validation)
+- [8. Cutover & Rollback](#8-cutover--rollback)
+- [9. Post-Migration Cleanup](#9-post-migration-cleanup)
+
 ## 1. Discovery & Scope
 
 - [ ] Identify all application components (web, api, workers, cronjobs).
