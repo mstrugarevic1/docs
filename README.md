@@ -7,6 +7,7 @@ This repository contains documentation only. Code, automation, and infrastructur
 ## Documentation
 
 * [AWS and Hybrid Disaster Recovery Guide](disaster-recovery-aws-hybrid.md)
+* [AWS Connectivity Options — Practical DevOps Reference](aws-connectivity-options.md)
 * [ADR Template](adr-template.md)
 * [AI-Assisted Development](ai-assisted-development.md)
 * [CI/CD Standards](ci-cd-standards.md)
