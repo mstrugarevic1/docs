@@ -349,27 +349,7 @@ Route 53 Resolver query logs
 
 ## 13. Decision Guide
 
-```text
-Do you need access to one service only?
-    |
-    ├── Yes → PrivateLink
-    |
-    └── No
-         |
-         Do you need to connect only two VPCs?
-             |
-             ├── Yes → VPC Peering
-             |
-             └── No → Transit Gateway
-
-Do you need on-premises connectivity?
-    |
-    ├── Fast setup / lower traffic → Site-to-Site VPN
-    |
-    └── Predictable high-volume traffic → Direct Connect
-                                              +
-                                         VPN backup
-```
+![AWS connectivity options decision flow](images/decision-flow.png)
 
 Actual selection also depends on cost, region, throughput, compliance, organizational ownership, and expected growth.
 
