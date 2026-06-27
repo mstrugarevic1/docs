@@ -70,14 +70,7 @@ Transit Gateway is a regional network transit hub. It connects multiple VPCs, VP
 
 Transit Gateway has its own route tables. This allows route-domain separation, such as production, non-production, shared services, and hybrid connectivity. It is simpler than managing a large peering mesh, but it adds cost and routing complexity.
 
-```text
-                 ┌─────────┐
-VPC A ───────────┤         │
-VPC B ───────────┤ Transit ├────────── On-Premises
-VPC C ───────────┤ Gateway │
-Shared Services ─┤         │
-                 └─────────┘
-```
+![Transit Gateway hub-and-spoke architecture](images/tgw.png)
 
 There are two routing layers to verify:
 
