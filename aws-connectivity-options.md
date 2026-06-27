@@ -172,32 +172,11 @@ AWS Direct Connect provides dedicated private connectivity from a data center or
 
 Direct Connect uses virtual interfaces and can connect through a Direct Connect Gateway to a Transit Gateway or Virtual Private Gateway. It is not automatically highly available. Resilient designs use redundant physical connections and locations, and VPN is commonly retained as backup.
 
-```text
-On-Premises
-      |
-Customer Router
-      |
-Direct Connect Location
-      |
-Direct Connect Gateway
-      |
-Transit Gateway / Virtual Private Gateway
-      |
-AWS VPCs
-```
+![AWS Direct Connect architecture](images/AWS-Direct-Connect.png)
 
 Resilient design:
 
-```text
-Primary path:
-On-Premises → Direct Connect A → AWS
-
-Secondary path:
-On-Premises → Direct Connect B → AWS
-
-Backup path:
-On-Premises → Site-to-Site VPN → AWS
-```
+The diagram shows the primary Direct Connect path. Resilient designs should use redundant Direct Connect paths and usually keep Site-to-Site VPN as a backup path.
 
 Direct Connect does not mean traffic is automatically encrypted end to end. Use MACsec where supported or application-level encryption where required by policy, compliance, or data sensitivity.
 
