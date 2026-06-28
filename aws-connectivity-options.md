@@ -42,13 +42,9 @@ VPC Peering provides direct private connectivity between two VPCs. It can work a
 
 VPC Peering is non-transitive. Each side needs route-table entries for the other VPC, and security groups, NACLs, DNS settings, and application listeners still need to allow the traffic.
 
-```text
-VPC A: 10.0.0.0/16
-        |
-        | VPC Peering
-        |
-VPC B: 10.20.0.0/16
-```
+<p align="center">
+  <img src="images/vpc-peering.png" alt="VPC Peering architecture and non-transitive routing" width="760">
+</p>
 
 Route examples:
 
