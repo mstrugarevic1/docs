@@ -36,14 +36,6 @@ Selecting an AWS connectivity option depends on the number of networks, required
 | Dedicated private on-premises connectivity                   | Direct Connect                           |
 | Highly available hybrid connectivity                         | Redundant Direct Connect with VPN backup |
 
-```text
-Two VPCs                    → VPC Peering
-Many VPCs                   → Transit Gateway
-One private service         → PrivateLink
-Quick hybrid connection     → Site-to-Site VPN
-Predictable hybrid traffic  → Direct Connect
-```
-
 ## 3. VPC Peering
 
 VPC Peering provides direct private connectivity between two VPCs. It can work across accounts and regions, and traffic uses private IP addresses. The VPC CIDR ranges must not overlap.
