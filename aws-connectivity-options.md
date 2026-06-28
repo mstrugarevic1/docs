@@ -122,7 +122,7 @@ AWS PrivateLink provides private access to a specific service. It does not provi
 PrivateLink commonly uses an endpoint service backed by a Network Load Balancer. Consumers create interface VPC endpoints in their VPCs. Traffic stays on private AWS networking, and consumers do not need routes to the provider VPC CIDR.
 
 <p align="center">
-  <img src="images/private-link.png" alt="AWS PrivateLink architecture" width="720">
+  <img src="images/private-link.png" alt="AWS PrivateLink architecture" width="620">
 </p>
 
 PrivateLink is useful for SaaS, cross-account services, and strict security boundaries. It avoids exposing an entire VPC network when only one service should be reachable.
