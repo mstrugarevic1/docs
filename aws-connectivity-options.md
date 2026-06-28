@@ -2,6 +2,23 @@
 
 This reference is for engineers selecting or troubleshooting AWS connectivity options. It is intentionally practical: enough detail to reason during design reviews and incidents, without turning into a full networking textbook.
 
+## Table of Contents
+
+- [1. Purpose](#1-purpose)
+- [2. Connectivity Decision Overview](#2-connectivity-decision-overview)
+- [3. VPC Peering](#3-vpc-peering)
+- [4. Transit Gateway](#4-transit-gateway)
+- [5. AWS PrivateLink](#5-aws-privatelink)
+- [6. Site-to-Site VPN](#6-site-to-site-vpn)
+- [7. AWS Direct Connect](#7-aws-direct-connect)
+- [8. Route Tables](#8-route-tables)
+- [9. Security Groups, NACLs, and Firewalls](#9-security-groups-nacls-and-firewalls)
+- [10. DNS Considerations](#10-dns-considerations)
+- [11. Common Connectivity Problems](#11-common-connectivity-problems)
+- [12. Practical Troubleshooting Order](#12-practical-troubleshooting-order)
+- [13. Decision Guide](#13-decision-guide)
+- [14. Operational Summary](#14-operational-summary)
+
 ## 1. Purpose
 
 Selecting an AWS connectivity option depends on the number of networks, required communication scope, transitive routing requirements, CIDR overlap, bandwidth and latency, availability requirements, security boundaries, operational complexity, and cost.
@@ -70,7 +87,9 @@ Transit Gateway is a regional network transit hub. It connects multiple VPCs, VP
 
 Transit Gateway has its own route tables. This allows route-domain separation, such as production, non-production, shared services, and hybrid connectivity. It is simpler than managing a large peering mesh, but it adds cost and routing complexity.
 
-![Transit Gateway hub-and-spoke architecture](images/tgw.png)
+<p align="center">
+  <img src="images/tgw.png" alt="Transit Gateway hub-and-spoke architecture" width="760">
+</p>
 
 There are two routing layers to verify:
 
@@ -142,7 +161,9 @@ Site-to-Site VPN uses encrypted IPsec tunnels over the public internet to connec
 
 VPN can use static routes or BGP. It is useful for initial hybrid connectivity, smaller environments, and backup connectivity. Latency and bandwidth depend on internet conditions.
 
-![AWS Site-to-Site VPN architecture](images/aws-site-to-site-vpn.png)
+<p align="center">
+  <img src="images/aws-site-to-site-vpn.png" alt="AWS Site-to-Site VPN architecture" width="620">
+</p>
 
 Both tunnels should be configured and monitored. Configuring only one tunnel removes the intended AWS tunnel redundancy.
 
@@ -154,7 +175,9 @@ AWS Direct Connect provides dedicated private connectivity from a data center or
 
 Direct Connect uses virtual interfaces and can connect through a Direct Connect Gateway to a Transit Gateway or Virtual Private Gateway. It is not automatically highly available. Resilient designs use redundant physical connections and locations, and VPN is commonly retained as backup.
 
-![AWS Direct Connect architecture](images/AWS-Direct-Connect.png)
+<p align="center">
+  <img src="images/AWS-Direct-Connect.png" alt="AWS Direct Connect architecture" width="720">
+</p>
 
 Resilient design:
 
@@ -310,7 +333,9 @@ Route 53 Resolver query logs
 
 ## 13. Decision Guide
 
-![AWS connectivity options decision flow](images/decision-flow.png)
+<p align="center">
+  <img src="images/decision-flow.png" alt="AWS connectivity options decision flow" width="760">
+</p>
 
 Actual selection also depends on cost, region, throughput, compliance, organizational ownership, and expected growth.
 
