@@ -142,18 +142,7 @@ Site-to-Site VPN uses encrypted IPsec tunnels over the public internet to connec
 
 VPN can use static routes or BGP. It is useful for initial hybrid connectivity, smaller environments, and backup connectivity. Latency and bandwidth depend on internet conditions.
 
-```text
-On-Premises Network
-        |
-Customer Gateway
-        |
-   IPsec Tunnels
-        |
-Virtual Private Gateway
-or Transit Gateway
-        |
-      AWS VPC
-```
+![AWS Site-to-Site VPN architecture](images/aws-site-to-site-vpn.png)
 
 Both tunnels should be configured and monitored. Configuring only one tunnel removes the intended AWS tunnel redundancy.
 
