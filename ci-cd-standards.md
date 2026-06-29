@@ -17,41 +17,64 @@ This document defines the standard structure, quality gates, and deployment prac
 
 ## Recommended Pipeline Flow
 
-![CI/CD pipeline flow](images/cicdv2.png)
+<p align="center">
+  <img src="images/cicdv2.png" alt="CI/CD pipeline flow" width="900">
+</p>
 
-## Pipeline Stages
+## Minimum Pipeline Standard
 
-### 1. Build
-- Compile code and install dependencies.
-- Linting (Style, Syntax, Static Analysis).
+Every production pipeline should include:
 
-### 2. Test
-- Unit tests (minimum code coverage required).
-- Integration tests (mocked external dependencies).
+- Pull request approval and passing CI checks.
+- Build and unit test validation.
+- Code security, secret, and dependency scanning.
+- Signed, immutable container image published to a private registry.
+- Staging deployment using the same artifact intended for production.
+- Integration, security, and production smoke tests.
+- Manual or policy-based approval before production deployment.
+- Deployment events sent to observability and incident management tools.
 
-### 3. Scan
-- SAST (Static Application Security Testing).
-- Dependency vulnerability scanning (SCA).
-- Secret scanning in the repository.
+## Continuous Integration
 
-### 4. Package
-- Container image creation (Dockerfile).
-- Image signing and pushing to a private registry.
+### 1. Code Commit
 
-### 5. Deploy & Promote
-- **Deployment:** Use the **exact same artifact** across all environments.
-- **Approval Gates:** Manual or automated gate for Production based on Staging success.
+Developers push application or infrastructure changes to Git through short-lived branches and pull requests.
 
-#### Deployment Monitoring Downtime
+### 2. Build & Unit Tests
 
-For deployments that may cause expected restarts or temporary service degradation, it is a recommended practice to optionally automate a maintenance window or monitoring downtime directly from the pipeline. This reduces false-positive alerts and unnecessary on-call notifications during the rollout phase.
+Compile the application, install dependencies, run linting, and validate individual components with automated unit tests.
 
-* May be configured in the monitoring platform or incident/on-call management tool.
-* Should target only the affected service or service group.
-* Should start immediately before the deployment process begins.
-* Must have an automatic expiration.
-* Should be removed after successful deployment validation.
-* Must not suppress unrelated or critical infrastructure alerts.
+### 3. Code Security Scan
+
+Run SAST and secret scanning. Critical findings or exposed credentials should fail the pipeline.
+
+### 4. Dependency Scan
+
+Check third-party libraries for known vulnerabilities and license risks before packaging.
+
+### 5. Build, Sign & Push Image
+
+Create the container image, sign it, and publish it to a private registry. The produced image must be immutable and reused across environments.
+
+## Continuous Delivery
+
+### 6. Deploy to Staging
+
+Deploy the release candidate to a production-like staging environment using the same image intended for production.
+
+### 7. Integration & Security Tests
+
+Run integration, end-to-end, DAST, and smoke tests against the running application.
+
+### 8. Approval Gate
+
+Approve the release manually or automatically based on policy, test results, and risk level.
+
+### 9. Deploy & Verify Production
+
+Deploy to production, run smoke tests, monitor health, and roll back if validation fails.
+
+For deployments that may cause expected restarts or temporary service degradation, the pipeline may automate a short maintenance window or monitoring downtime. It must target only the affected service, start immediately before deployment, expire automatically, and must not suppress unrelated critical alerts.
 
 ## Secrets Handling
 
