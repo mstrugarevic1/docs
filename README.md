@@ -23,3 +23,19 @@ This repository contains documentation only. Code, automation, and infrastructur
 * [Rancher 1.6 to AWS EKS Migration](rancher-1-6-to-aws-eks-migration.md)
 * [Security Compliance Quick Start](security-compliance-quick-start.md)
 * [Terraform and Terragrunt AWS Infrastructure Structure](terraform-terragrunt-aws-structure.md)
+
+## PDF conversion
+
+Use `convert-to-pdf.sh` to render the Markdown documents in this repository to PDF files.
+
+```bash
+./convert-to-pdf.sh
+```
+
+The script writes PDFs to `pdf/` by default. To use a different output directory, pass it as the first argument:
+
+```bash
+./convert-to-pdf.sh output-dir
+```
+
+The conversion uses `npx md-to-pdf`, which renders through Chromium. The script applies repository-specific CSS for readable browser-style PDFs, including Arial/Helvetica body text, Menlo code blocks, and visible table borders.
