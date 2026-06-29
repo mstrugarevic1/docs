@@ -17,6 +17,9 @@ trap 'rm -f "$css_file"' EXIT
 # Use md-to-pdf/Chromium instead of pandoc so the PDFs keep a browser-like look.
 # The CSS below makes the output use an Arial-style font and visible markdown
 # tables with borders/padding, matching what we wanted from the rendered docs.
+# Required fonts: Arial/Helvetica for body text and Menlo for code/pre blocks
+# with Monaco, Consolas and Courier New as fallbacks.
+# Tested on macOS with npx/md-to-pdf.
 cat >"$css_file" <<'CSS'
 body {
   background: #fff;
@@ -63,7 +66,7 @@ body {
 
 .markdown-body code,
 .markdown-body pre {
-  font-family: Consolas, "Courier New", monospace;
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
 @page {
