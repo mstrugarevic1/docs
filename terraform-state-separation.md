@@ -1,5 +1,25 @@
 # Terraform State Separation in Large AWS Organizations
 
+## Who This Document Is For
+
+This document is for platform engineers, DevOps engineers, cloud architects, security engineers, and application team leads who need a practical Terraform operating model for a multi-account AWS organization.
+
+Use it when deciding where Terraform state boundaries should be, which team should own each state, and how application teams should consume shared infrastructure without being able to modify it directly.
+
+## Table of Contents
+
+- [Problem Statement](#problem-statement)
+- [Example Organization](#example-organization)
+- [Recommended State Separation](#recommended-state-separation)
+- [Ownership Model](#ownership-model)
+- [Remote State Flow](#remote-state-flow)
+- [IAM Model](#iam-model)
+- [Why Not One Global State](#why-not-one-global-state)
+- [Practical Folder Example](#practical-folder-example)
+- [Backend and Naming Guidance](#backend-and-naming-guidance)
+- [Diagram](#diagram)
+- [Key Principles](#key-principles)
+
 ## Problem Statement
 
 In a large AWS organization, one Terraform state file for all accounts, environments, teams, and resources creates operational risk. Terraform state is not just a cache; it is the source Terraform uses to decide what it owns and what it can change.
@@ -154,39 +174,30 @@ infra/
 
 Each leaf directory should map to a Terraform root module and a separate backend state. Keep the state boundary obvious from the path.
 
+## Backend and Naming Guidance
+
+Use a remote backend with locking for every state. In AWS, the common setup is S3 for state storage and DynamoDB for locking, with encryption enabled on the bucket.
+
+Keep state paths predictable:
+
+```text
+<domain>/<environment>/<team-or-service>/terraform.tfstate
+```
+
+Examples:
+
+```text
+network/prod/core/terraform.tfstate
+dns/prod/shared/terraform.tfstate
+platform/prod/eks/terraform.tfstate
+apps/prod/team-a/payments-api/terraform.tfstate
+```
+
+Predictable names make access control, audits, incident response, and state recovery easier.
+
 ## Diagram
 
-```mermaid
-flowchart TD
-    org[AWS Organization]
-
-    org --> shared[Shared platform-owned states]
-    org --> apps[Application team-owned states]
-
-    shared --> network[network state]
-    shared --> dns[DNS state]
-    shared --> security[security state]
-    shared --> platform[platform services state]
-
-    apps --> teamADev[team-a dev app state]
-    apps --> teamAStage[team-a stage app state]
-    apps --> teamAProd[team-a prod app state]
-    apps --> teamBDev[team-b dev app state]
-    apps --> teamBStage[team-b stage app state]
-    apps --> teamBProd[team-b prod app state]
-
-    network -- vpc_id, subnet_ids, security_group_ids --> teamADev
-    network -- vpc_id, subnet_ids, security_group_ids --> teamAStage
-    network -- vpc_id, subnet_ids, security_group_ids --> teamAProd
-    network -- vpc_id, subnet_ids, security_group_ids --> teamBDev
-    network -- vpc_id, subnet_ids, security_group_ids --> teamBStage
-    network -- vpc_id, subnet_ids, security_group_ids --> teamBProd
-
-    dns -- route53_zone_id --> teamAProd
-    dns -- route53_zone_id --> teamBProd
-    security -- approved policies and shared controls --> teamAProd
-    security -- approved policies and shared controls --> teamBProd
-```
+![Terraform state separation diagram](images/terraform-state-diagram.png)
 
 ## Key Principles
 
