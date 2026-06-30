@@ -22,6 +22,7 @@ This repository contains documentation only. Code, automation, and infrastructur
 * [Project Delivery Playbook](project-delivery-playbook.md)
 * [Rancher 1.6 to AWS EKS Migration](rancher-1-6-to-aws-eks-migration.md)
 * [Security Compliance Quick Start](security-compliance-quick-start.md)
+* [Terraform State Separation in Large AWS Organizations](terraform-state-separation.md)
 * [Terraform and Terragrunt AWS Infrastructure Structure](terraform-terragrunt-aws-structure.md)
 
 ## PDF conversion
