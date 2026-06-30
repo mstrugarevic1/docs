@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd "$(dirname "$0")"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd "$script_dir/../.." && pwd)"
+cd "$repo_root"
 
 out_dir="${1:-pdf}"
 mkdir -p "$out_dir"

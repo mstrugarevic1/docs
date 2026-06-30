@@ -1,8 +1,8 @@
-# Cloud Docs
+# Engineering Docs
 
-Practical engineering guides and checklists for cloud, platform, DevOps, SRE, and delivery work.
+Practical engineering guides and checklists for platform, DevOps, SRE, cloud migration, delivery, Terraform, Kubernetes, and operations work.
 
-This repository contains documentation only. Code, automation, and infrastructure examples belong in their own repositories.
+This repository contains documentation and small supporting documentation tooling. Production code, automation, and infrastructure implementations belong in their own repositories.
 
 ## Documentation
 
@@ -23,20 +23,9 @@ This repository contains documentation only. Code, automation, and infrastructur
 * [Rancher 1.6 to AWS EKS Migration](rancher-1-6-to-aws-eks-migration.md)
 * [Security Compliance Quick Start](security-compliance-quick-start.md)
 * [Terraform State Separation in Large AWS Organizations](terraform-state-separation.md)
+* [Breaking a Terraform Monolith into Independent State Components](terraform-monolith-decomposition.md)
 * [Terraform and Terragrunt AWS Infrastructure Structure](terraform-terragrunt-aws-structure.md)
 
 ## PDF conversion
 
-Use `convert-to-pdf.sh` to render the Markdown documents in this repository to PDF files.
-
-```bash
-./convert-to-pdf.sh
-```
-
-The script writes PDFs to `pdf/` by default. To use a different output directory, pass it as the first argument:
-
-```bash
-./convert-to-pdf.sh output-dir
-```
-
-The conversion uses `npx md-to-pdf`, which renders through Chromium. The script applies repository-specific CSS for readable browser-style PDFs, including Arial/Helvetica body text, Menlo code blocks, and visible table borders.
+See [PDF conversion tooling](docs/pdf-conversion/README.md).
