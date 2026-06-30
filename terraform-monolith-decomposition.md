@@ -129,20 +129,6 @@ platform add-ons
 applications
 ```
 
-```mermaid
-flowchart TD
-    network[network]
-    security[security]
-    runtime[eks / data / shared-services]
-    addons[platform add-ons]
-    applications[applications]
-
-    network --> security
-    security --> runtime
-    runtime --> addons
-    addons --> applications
-```
-
 Do not build a fully connected dependency graph. If every state reads every other state, the system is still coupled; it only has more files. Prefer dependencies that flow from foundational infrastructure toward runtime services and then applications.
 
 ## 4. Modules Versus Root Modules
