@@ -28,4 +28,4 @@ This repository contains documentation and small supporting documentation toolin
 
 ## PDF conversion
 
-See [PDF conversion tooling](docs/pdf-conversion/README.md).
+See [PDF conversion tooling](tools/pdf-conversion/README.md).
