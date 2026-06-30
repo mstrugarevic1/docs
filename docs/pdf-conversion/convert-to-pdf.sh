@@ -101,9 +101,12 @@ shopt -s nullglob
 for file in *.md; do
   [[ "$file" == "lessons_learned.md" ]] && continue
   base="${file%.md}"
+  title="$(sed -n 's/^# //p' "$file" | head -n 1)"
+  [[ -n "$title" ]] || title="$base"
   echo "rendering $file -> $out_dir/$base.pdf"
   # Current md-to-pdf writes next to the source file, so move it into pdf/.
   npx --yes md-to-pdf "$file" \
+    --document-title "$title" \
     --stylesheet "$css_file" \
     --body-class markdown-body \
     --basedir . \
