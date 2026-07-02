@@ -59,37 +59,7 @@ AWS Control Tower is optional. It helps create and govern a landing zone.
 
 ## 3. Basic organizational structure
 
-```mermaid
-flowchart TB
-    Root[AWS Organization Root]
-    Mgmt[Management Account]
-    SecOU[Security OU]
-    InfraOU[Infrastructure OU]
-    NonProdOU[Non-Production OU]
-    ProdOU[Production OU]
-    SandboxOU[Sandbox OU]
-    Log[Log Archive Account]
-    Security[Security Account]
-    Network[Network Account]
-    Shared[Shared Services Account]
-    Dev[Development Account]
-    Prod[Production Account]
-    Sandbox[Developer Sandbox Account]
-
-    Root --> Mgmt
-    Root --> SecOU
-    Root --> InfraOU
-    Root --> NonProdOU
-    Root --> ProdOU
-    Root --> SandboxOU
-    SecOU --> Log
-    SecOU --> Security
-    InfraOU --> Network
-    InfraOU --> Shared
-    NonProdOU --> Dev
-    ProdOU --> Prod
-    SandboxOU --> Sandbox
-```
+![AWS Organizations account and OU structure](assets/aws-multi-account/organizations.png)
 
 Reference structure:
 
@@ -117,10 +87,6 @@ AWS Organization Root
 The Management Account owns the organization. Keep it mostly empty.
 
 This is only a starting point. Real organizations may add accounts for different applications, teams, environments, compliance boundaries, or business units. Avoid a complex OU tree before there is a real need.
-
-> **Optional screenshot:** AWS Organizations account and OU structure.
->
-> Suggested path: `assets/aws-multi-account/organizations.png`
 
 ## 4. Account responsibilities
 
