@@ -13,6 +13,7 @@ This repository contains documentation and small supporting documentation toolin
 * [AI-Assisted Development](ai-assisted-development.md)
 * [CI/CD Standards](ci-cd-standards.md)
 * [Cloud Migration Risk Register](cloud-migration-risk-register.md)
+* [FluxCD and Argo CD GitOps Basics](fluxcd-argocd-gitops.md)
 * [Incident Response Runbook](incident-response-runbook.md)
 * [Kubernetes CNI Comparison](kubernetes-cni-comparison.md)
 * [Kubernetes Migration Checklist](kubernetes-migration-checklist.md)
