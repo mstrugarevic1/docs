@@ -8,6 +8,7 @@ This repository contains documentation and small supporting documentation toolin
 
 * [AWS and Hybrid Disaster Recovery Guide](disaster-recovery-aws-hybrid.md)
 * [AWS Connectivity Options — Practical DevOps Reference](aws-connectivity-options.md)
+* [AWS Multi-Account Basics](aws-multi-account-basics.md) — A beginner-friendly introduction to AWS multi-account architecture, account responsibilities, centralized access, security, logging and basic cross-account connectivity.
 * [ADR Template](adr-template.md)
 * [AI-Assisted Development](ai-assisted-development.md)
 * [CI/CD Standards](ci-cd-standards.md)
