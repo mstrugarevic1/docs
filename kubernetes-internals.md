@@ -265,17 +265,9 @@ Screenshot placeholder:
 
 Kubernetes Secrets are native objects for sensitive values, but many companies use Vault for stronger secret lifecycle management, dynamic credentials, central audit, and separation from cluster-local storage.
 
-```mermaid
-flowchart TD
-    A[Pod created] --> B[API Server admission]
-    B --> C[Vault Agent Injector webhook]
-    C --> D[Pod mutated with Vault Agent sidecar/init]
-    D --> E[kubelet starts Pod]
-    E --> F[Vault Agent authenticates with ServiceAccount JWT]
-    F --> G[Vault returns secret]
-    G --> H[Shared volume]
-    H --> I[Application reads secret file]
-```
+<p align="center">
+  <img src="images/secret-vault-pod.png" alt="Secret to Vault to Pod workflow" width="760">
+</p>
 
 ### Internal workflow
 
@@ -306,15 +298,9 @@ Screenshot placeholder:
 
 Horizontal Pod Autoscaler changes replica count. It does not place Pods on nodes and it does not add nodes to the cluster.
 
-```mermaid
-flowchart TD
-    A[kubelet] --> B[Metrics Server]
-    B --> C[HPA Controller]
-    C --> D[Deployment replicas updated]
-    D --> E[ReplicaSet creates Pods]
-    E --> F[Scheduler assigns nodes]
-    F --> G[kubelet starts new Pods]
-```
+<p align="center">
+  <img src="images/hpa-metrics-server-scheduler.png" alt="HPA to Metrics Server to Scheduler workflow" width="760">
+</p>
 
 ### Internal workflow
 
@@ -387,17 +373,9 @@ Screenshot placeholder:
 
 GitOps stores desired deployment state in Git and uses a controller to reconcile the cluster to that state. ArgoCD is a pull-based controller: it watches Git and the cluster, compares them, and applies changes when configured or requested.
 
-```mermaid
-flowchart TD
-    A[Developer] --> B[Git repository]
-    B --> C[CI pipeline]
-    C --> D[Container Registry]
-    C --> E[GitOps repository]
-    E --> F[ArgoCD]
-    F --> G[API Server]
-    G --> H[Deployment]
-    H --> I[Pods]
-```
+<p align="center">
+  <img src="images/argocd-git-kubernetes.png" alt="ArgoCD to Git to Kubernetes workflow" width="760">
+</p>
 
 ### Internal workflow
 
