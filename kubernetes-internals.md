@@ -51,17 +51,9 @@ Kubernetes is a control system. Users declare desired state through the API. Con
 
 The control plane stores and coordinates cluster state. Worker nodes run workloads. Most components communicate by reading from and writing to the API Server.
 
-```mermaid
-flowchart TD
-    A[User / Controller] --> B[API Server]
-    B --> C[etcd]
-    B --> D[Scheduler]
-    B --> E[Controller Manager]
-    B --> F[kubelet]
-    F --> G[container runtime]
-    F --> H[CNI]
-    F --> I[Pods]
-```
+<p align="center">
+  <img src="images/k8s-architecture.png" alt="Kubernetes architecture overview" width="760">
+</p>
 
 ### Main components
 
