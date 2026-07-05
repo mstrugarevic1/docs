@@ -51,20 +51,16 @@ Kubernetes is a control system. Users declare desired state through the API. Con
 
 The control plane stores and coordinates cluster state. Worker nodes run workloads. Most components communicate by reading from and writing to the API Server.
 
-```text
-User / Controller
-        |
-        v
-    API Server
-        |
-        v
-      etcd
-
-Control Plane:
-API Server, Scheduler, Controller Manager, etcd
-
-Worker Node:
-kubelet, kube-proxy, container runtime, CNI, Pods
+```mermaid
+flowchart TD
+    A[User / Controller] --> B[API Server]
+    B --> C[etcd]
+    B --> D[Scheduler]
+    B --> E[Controller Manager]
+    B --> F[kubelet]
+    F --> G[container runtime]
+    F --> H[CNI]
+    F --> I[Pods]
 ```
 
 ### Main components
@@ -104,42 +100,21 @@ Screenshot placeholder:
 
 Applying a manifest starts with an API write. The visible result may be a running Pod, but several components participate before the container starts.
 
-```text
-Developer
-    |
-    v
-kubectl apply
-    |
-    v
-API Server
-    |
-    +--> Authentication
-    +--> Authorization
-    +--> Admission Controllers
-    |
-    v
-etcd
-    |
-    v
-Deployment Controller
-    |
-    v
-ReplicaSet
-    |
-    v
-Pod
-    |
-    v
-Scheduler
-    |
-    v
-kubelet
-    |
-    v
-container runtime + CNI
-    |
-    v
-Pod Running
+```mermaid
+flowchart TD
+    A[Developer] --> B[kubectl apply]
+    B --> C[API Server]
+    C --> D[Authentication]
+    D --> E[Authorization]
+    E --> F[Admission Controllers]
+    F --> G[etcd]
+    G --> H[Deployment Controller]
+    H --> I[ReplicaSet]
+    I --> J[Pod]
+    J --> K[Scheduler]
+    K --> L[kubelet]
+    L --> M[container runtime + CNI]
+    M --> N[Pod Running]
 ```
 
 ### Internal workflow
@@ -196,35 +171,17 @@ Screenshot placeholder:
 
 External traffic usually enters Kubernetes through infrastructure outside the cluster, then moves through an ingress layer, Service abstraction, node networking, and finally a Pod.
 
-```text
-Browser
-    |
-    v
-Route53
-    |
-    v
-AWS Application Load Balancer
-    |
-    v
-Ingress Controller
-    |
-    v
-Ingress Resource
-    |
-    v
-ClusterIP Service
-    |
-    v
-EndpointSlice
-    |
-    v
-kube-proxy
-    |
-    v
-Pod IP
-    |
-    v
-Container
+```mermaid
+flowchart TD
+    A[Browser] --> B[Route53]
+    B --> C[AWS Application Load Balancer]
+    C --> D[Ingress Controller]
+    D --> E[Ingress Resource]
+    E --> F[ClusterIP Service]
+    F --> G[EndpointSlice]
+    G --> H[kube-proxy]
+    H --> I[Pod IP]
+    I --> J[Container]
 ```
 
 ### Internal workflow
@@ -270,20 +227,12 @@ Screenshot placeholder:
 
 A Deployment describes the desired rollout for a stateless workload. It manages ReplicaSets, and ReplicaSets manage Pods.
 
-```text
-Deployment
-    |
-    v
-ReplicaSet revision 1
-    |
-    v
-Pods
-
-Deployment updated
-    |
-    +--> old ReplicaSet scales down
-    |
-    +--> new ReplicaSet scales up
+```mermaid
+flowchart TD
+    A[Deployment] --> B[ReplicaSet revision 1]
+    B --> C[Pods]
+    D[Deployment updated] --> E[old ReplicaSet scales down]
+    D --> F[new ReplicaSet scales up]
 ```
 
 ### Internal workflow
@@ -313,20 +262,12 @@ Screenshot placeholder:
 
 ConfigMaps store non-secret configuration. Updating a ConfigMap changes the object in the API, but it does not automatically restart Pods.
 
-```text
-ConfigMap updated
-    |
-    +--> mounted volume eventually updates file
-    |
-    +--> environment variables do not change
-    |
-    v
-Pod keeps running
-
-Rollout restart or template checksum change
-    |
-    v
-New ReplicaSet / new Pods
+```mermaid
+flowchart TD
+    A[ConfigMap updated] --> B[mounted volume eventually updates file]
+    A --> C[environment variables do not change]
+    A --> D[Pod keeps running]
+    E[Rollout restart or template checksum change] --> F[New ReplicaSet / new Pods]
 ```
 
 ### Internal workflow
@@ -358,32 +299,16 @@ Screenshot placeholder:
 
 Kubernetes Secrets are native objects for sensitive values, but many companies use Vault for stronger secret lifecycle management, dynamic credentials, central audit, and separation from cluster-local storage.
 
-```text
-Pod created
-    |
-    v
-API Server admission
-    |
-    v
-Vault Agent Injector webhook
-    |
-    v
-Pod mutated with Vault Agent sidecar/init
-    |
-    v
-kubelet starts Pod
-    |
-    v
-Vault Agent authenticates with ServiceAccount JWT
-    |
-    v
-Vault returns secret
-    |
-    v
-Shared volume
-    |
-    v
-Application reads secret file
+```mermaid
+flowchart TD
+    A[Pod created] --> B[API Server admission]
+    B --> C[Vault Agent Injector webhook]
+    C --> D[Pod mutated with Vault Agent sidecar/init]
+    D --> E[kubelet starts Pod]
+    E --> F[Vault Agent authenticates with ServiceAccount JWT]
+    F --> G[Vault returns secret]
+    G --> H[Shared volume]
+    H --> I[Application reads secret file]
 ```
 
 ### Internal workflow
@@ -415,26 +340,14 @@ Screenshot placeholder:
 
 Horizontal Pod Autoscaler changes replica count. It does not place Pods on nodes and it does not add nodes to the cluster.
 
-```text
-kubelet
-    |
-    v
-Metrics Server
-    |
-    v
-HPA Controller
-    |
-    v
-Deployment replicas updated
-    |
-    v
-ReplicaSet creates Pods
-    |
-    v
-Scheduler assigns nodes
-    |
-    v
-kubelet starts new Pods
+```mermaid
+flowchart TD
+    A[kubelet] --> B[Metrics Server]
+    B --> C[HPA Controller]
+    C --> D[Deployment replicas updated]
+    D --> E[ReplicaSet creates Pods]
+    E --> F[Scheduler assigns nodes]
+    F --> G[kubelet starts new Pods]
 ```
 
 ### Internal workflow
@@ -466,23 +379,13 @@ Screenshot placeholder:
 
 Container restarts are node-local actions coordinated by kubelet and the container runtime, then reported back to the API Server.
 
-```text
-Container exits
-    |
-    v
-kubelet detects exit
-    |
-    v
-RestartPolicy checked
-    |
-    v
-container runtime starts container again
-    |
-    v
-kubelet updates Pod status
-    |
-    v
-API Server
+```mermaid
+flowchart TD
+    A[Container exits] --> B[kubelet detects exit]
+    B --> C[RestartPolicy checked]
+    C --> D[container runtime starts container again]
+    D --> E[kubelet updates Pod status]
+    E --> F[API Server]
 ```
 
 ### Internal workflow
@@ -518,32 +421,16 @@ Screenshot placeholder:
 
 GitOps stores desired deployment state in Git and uses a controller to reconcile the cluster to that state. ArgoCD is a pull-based controller: it watches Git and the cluster, compares them, and applies changes when configured or requested.
 
-```text
-Developer
-    |
-    v
-Git repository
-    |
-    v
-CI pipeline
-    |
-    v
-Container Registry
-    |
-    v
-GitOps repository
-    |
-    v
-ArgoCD
-    |
-    v
-API Server
-    |
-    v
-Deployment
-    |
-    v
-Pods
+```mermaid
+flowchart TD
+    A[Developer] --> B[Git repository]
+    B --> C[CI pipeline]
+    C --> D[Container Registry]
+    C --> E[GitOps repository]
+    E --> F[ArgoCD]
+    F --> G[API Server]
+    G --> H[Deployment]
+    H --> I[Pods]
 ```
 
 ### Internal workflow
