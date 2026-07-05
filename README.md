@@ -16,6 +16,7 @@ This repository contains documentation and small supporting documentation toolin
 * [FluxCD and Argo CD GitOps Basics](fluxcd-argocd-gitops.md) — A practical comparison of FluxCD and Argo CD, including GitOps fundamentals, reconciliation, Helm, Kustomize, drift correction, and troubleshooting.
 * [Incident Response Runbook](incident-response-runbook.md)
 * [Kubernetes CNI Comparison](kubernetes-cni-comparison.md)
+* [Kubernetes Internals](kubernetes-internals.md) — A practical walkthrough of Kubernetes internal workflows for deployments, routing, rollouts, autoscaling, restarts, Vault injection, and GitOps.
 * [Kubernetes Migration Checklist](kubernetes-migration-checklist.md)
 * [Kubernetes Resource Sizing](kubernetes-resource-sizing.md)
 * [Legacy Application Development](legacy-application-development.md)
