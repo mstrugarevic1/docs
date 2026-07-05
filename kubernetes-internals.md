@@ -92,22 +92,9 @@ Screenshot placeholder:
 
 Applying a manifest starts with an API write. The visible result may be a running Pod, but several components participate before the container starts.
 
-```mermaid
-flowchart TD
-    A[Developer] --> B[kubectl apply]
-    B --> C[API Server]
-    C --> D[Authentication]
-    D --> E[Authorization]
-    E --> F[Admission Controllers]
-    F --> G[etcd]
-    G --> H[Deployment Controller]
-    H --> I[ReplicaSet]
-    I --> J[Pod]
-    J --> K[Scheduler]
-    K --> L[kubelet]
-    L --> M[container runtime + CNI]
-    M --> N[Pod Running]
-```
+<p align="center">
+  <img src="images/kubernetes-apply-pod-running.png" alt="kubectl apply to Pod running workflow" width="760">
+</p>
 
 ### Internal workflow
 
@@ -219,13 +206,9 @@ Screenshot placeholder:
 
 A Deployment describes the desired rollout for a stateless workload. It manages ReplicaSets, and ReplicaSets manage Pods.
 
-```mermaid
-flowchart TD
-    A[Deployment] --> B[ReplicaSet revision 1]
-    B --> C[Pods]
-    D[Deployment updated] --> E[old ReplicaSet scales down]
-    D --> F[new ReplicaSet scales up]
-```
+<p align="center">
+  <img src="images/deployment-replicaset-pod.png" alt="Deployment to ReplicaSet to Pod workflow" width="760">
+</p>
 
 ### Internal workflow
 
