@@ -150,18 +150,9 @@ Screenshot placeholder:
 
 External traffic usually enters Kubernetes through infrastructure outside the cluster, then moves through an ingress layer, Service abstraction, node networking, and finally a Pod.
 
-```mermaid
-flowchart TD
-    A[Browser] --> B[Route53]
-    B --> C[AWS Application Load Balancer]
-    C --> D[Ingress Controller]
-    D --> E[Ingress Resource]
-    E --> F[ClusterIP Service]
-    F --> G[EndpointSlice]
-    G --> H[kube-proxy]
-    H --> I[Pod IP]
-    I --> J[Container]
-```
+<p align="center">
+  <img src="images/browser-alb-ingress-service-pod.png" alt="Browser to ALB to Ingress to Service to Pod workflow" width="760">
+</p>
 
 ### Internal workflow
 
