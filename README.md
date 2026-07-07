@@ -24,6 +24,7 @@ This repository contains documentation and small supporting documentation toolin
 * [Production Readiness Checklist](production-readiness-checklist.md)
 * [Project Delivery Playbook](project-delivery-playbook.md)
 * [Rancher 1.6 to AWS EKS Migration](rancher-1-6-to-aws-eks-migration.md)
+* [Secret Management Guide](secret-management-guide.md) — A practical guide to managing secrets with Ansible Vault, Terraform, AWS Secrets Manager, SSM Parameter Store, and HashiCorp Vault, including rekey vs rotation, CI/CD patterns, and common mistakes.
 * [Security Compliance Quick Start](security-compliance-quick-start.md)
 * [Terraform State Separation in Large AWS Organizations](terraform-state-separation.md)
 * [Breaking a Terraform Monolith into Independent State Components](terraform-monolith-decomposition.md)
