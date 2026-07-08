@@ -19,14 +19,15 @@ Important scope note: this is a **multi-Region, single AWS account** design. It 
 - [9. Sample Application Design](#9-sample-application-design)
 - [10. Traffic Routing](#10-traffic-routing)
 - [11. Failure Scenarios](#11-failure-scenarios)
-- [12. Observability](#12-observability)
-- [13. Security Considerations](#13-security-considerations)
-- [14. Local vs Real AWS Limitations](#14-local-vs-real-aws-limitations)
-- [15. Step-by-Step Implementation Plan](#15-step-by-step-implementation-plan)
-- [16. Repository Structure](#16-repository-structure)
-- [17. Architecture Diagram](#17-architecture-diagram)
-- [18. What This Project Demonstrates](#18-what-this-project-demonstrates)
-- [19. Disclaimer](#19-disclaimer)
+- [12. Regional Failure Flow](#12-regional-failure-flow)
+- [13. Observability](#13-observability)
+- [14. Security Considerations](#14-security-considerations)
+- [15. Local vs Real AWS Limitations](#15-local-vs-real-aws-limitations)
+- [16. Step-by-Step Implementation Plan](#16-step-by-step-implementation-plan)
+- [17. Repository Structure](#17-repository-structure)
+- [18. Architecture Diagram](#18-architecture-diagram)
+- [19. What This Project Demonstrates](#19-what-this-project-demonstrates)
+- [20. Disclaimer](#20-disclaimer)
 
 ## 1. Overview
 
@@ -171,11 +172,11 @@ The data layer decides whether the setup is truly active-active. The application
 DynamoDB Global Tables is a single logical table with replicas in `eu-central-1` and `eu-west-1`.
 
 - Both application instances can write. There is no primary Region; each Region writes to its local replica.
-- DynamoDB replicates changes between Regions asynchronously, usually within a second under normal conditions.
+- DynamoDB replicates changes between Regions asynchronously, usually within a second. Cross-Region reads are therefore eventually consistent: an item written in one Region appears in the other after a short delay.
 - Conflict resolution is last-writer-wins. If the same item is written in both Regions at nearly the same time, the write with the latest timestamp wins and the other is discarded.
 - This is a good fit for demonstrating active-active behavior: the `/write` endpoint works in either Region, and a `/read` in the other Region returns the replicated item shortly after.
 
-Trade-off: last-writer-wins can silently drop a concurrent write. That is acceptable for a demo and for workloads that tolerate it, but not for data where every write must be preserved.
+Trade-off: last-writer-wins can silently drop a concurrent write. That is acceptable for this project, where the goal is to show multi-Region writes rather than guarantee every write survives, but not for data where every write must be preserved.
 
 ### Option B: Aurora Global Database
 
@@ -307,7 +308,20 @@ This project should demonstrate these failures and the observed behavior.
 
 For each scenario, capture: which Region served requests (via `/region`), error rate and latency during the transition, and time to recover.
 
-## 12. Observability
+## 12. Regional Failure Flow
+
+What happens when Region A becomes unavailable:
+
+- The Route 53 (or Global Accelerator) health check against `/health` in Region A starts failing.
+- After the failure threshold is reached, Route 53 stops returning the Region A endpoint; new lookups resolve to Region B only.
+- In-flight connections to Region A break; clients reconnect and, with a low DNS TTL, land on Region B.
+- Region B keeps serving traffic using the data already replicated to it through DynamoDB Global Tables.
+- No manual data failover is needed, because DynamoDB has no single primary Region.
+- The Argo CD hub and the monitoring stack in Region A are gone; Region B runs its last-synced state but cannot receive new deployments until the hub returns.
+- When Region A comes back, DynamoDB resumes replication and reconciles the two replicas, applying last-writer-wins to any conflicts.
+- Argo CD re-syncs Region A to the current Git state, and the global router adds it back once `/health` passes again.
+
+## 13. Observability
 
 Each cluster runs its own observability stack; there is no shared monitoring plane by default.
 
@@ -318,7 +332,7 @@ Each cluster runs its own observability stack; there is no shared monitoring pla
 
 Because monitoring is per cluster, a full Region A outage also removes Region A's Grafana and Prometheus. Here this is acceptable; a production setup would send metrics to a location that survives a Regional loss (for example a managed monitoring service or a third observability Region).
 
-## 13. Security Considerations
+## 14. Security Considerations
 
 - **IAM / IRSA.** The application uses IAM Roles for Service Accounts so pods get only DynamoDB permissions scoped to the project table, not node-wide credentials. Keep the policy limited to the specific table and actions used.
 - **Secrets.** External Secrets Operator pulls secrets from Secrets Manager into Kubernetes Secrets. Secrets are not committed to Git. Only references to secret names live in the repository.
@@ -328,7 +342,7 @@ Because monitoring is per cluster, a full Region A outage also removes Region A'
 - **Registry.** ECR repositories are private; image pulls use the cluster's node or pod IAM role. Enable scan-on-push if demonstrating image scanning.
 - **Single account caveat.** Because this is one AWS account, there is no account boundary between Regions. A production design would usually isolate Regions and environments across accounts to limit blast radius. State this limitation clearly.
 
-## 14. Local vs Real AWS Limitations
+## 15. Local vs Real AWS Limitations
 
 The design targets real AWS. Parts of it can be approximated locally, but several pieces cannot be reproduced faithfully.
 
@@ -343,7 +357,7 @@ The design targets real AWS. Parts of it can be approximated locally, but severa
 
 What this means: a local build is useful for validating the GitOps flow, the application, and the failover logic at the Kubernetes level. It cannot validate real Regional failover, real replication latency, or real global routing. Those require deploying to AWS. Be explicit about which claims are validated locally and which need real AWS.
 
-## 15. Step-by-Step Implementation Plan
+## 16. Step-by-Step Implementation Plan
 
 1. **Repository and application.** Create the Git repository. Build the FastAPI application, containerize it, and write the base Kubernetes manifests (Deployment, Service, Ingress, ServiceAccount).
 2. **ECR.** Create an ECR repository in Region A, enable cross-Region replication to Region B, and push the image. Confirm the image appears in both Regions.
@@ -359,9 +373,9 @@ What this means: a local build is useful for validating the GitOps flow, the app
 12. **Failure testing.** Run the scenarios in section 11. Record behavior, failover time, and replication lag.
 13. **Document results.** Capture screenshots, dashboards, and observed timings in the repository.
 
-## 16. Repository Structure
+## 17. Repository Structure
 
-This is the layout the project would use if built out. This document describes that layout; the files themselves are not part of this doc.
+This is the layout the project would use if built out; the files themselves are not part of this document.
 
 ```text
 kubernetes-multi-site-dr/
@@ -371,12 +385,11 @@ kubernetes-multi-site-dr/
 │   ├── requirements.txt
 │   └── Dockerfile
 ├── infra/
-│   ├── terraform/
-│   │   ├── region-a/           # VPC, EKS, IAM, DynamoDB (eu-central-1)
-│   │   ├── region-b/           # VPC, EKS, IAM (eu-west-1)
-│   │   ├── ecr/                # ECR repo + replication rule
-│   │   └── dns/                # Route 53 records + health checks
-│   └── eksctl/                 # optional cluster configs
+│   └── terraform/
+│       ├── region-a/           # VPC, EKS, IAM, DynamoDB (eu-central-1)
+│       ├── region-b/           # VPC, EKS, IAM (eu-west-1)
+│       ├── ecr/                # ECR repo + replication rule
+│       └── dns/                # Route 53 records + health checks
 ├── platform/
 │   ├── argocd/                 # Argo CD install + ApplicationSet
 │   ├── external-secrets/
@@ -394,11 +407,11 @@ kubernetes-multi-site-dr/
     └── results/                # screenshots, dashboards, timings
 ```
 
-## 17. Architecture Diagram
+## 18. Architecture Diagram
 
 ![Kubernetes multi-site DR architecture across eu-central-1 and eu-west-1](images/kubernetes-multi-site-dr.png)
 
-## 18. What This Project Demonstrates
+## 19. What This Project Demonstrates
 
 - Running one Kubernetes workload active-active across two AWS Regions.
 - GitOps with Argo CD deploying identical state to multiple clusters from one repository.
@@ -409,7 +422,7 @@ kubernetes-multi-site-dr/
 - Per-cluster observability and how to reason about it during a Regional loss.
 - The ability to state trade-offs and limitations honestly: data conflict handling, single-account blast radius, hub dependency, and DNS failover timing.
 
-## 19. Disclaimer
+## 20. Disclaimer
 
 This is a learning project, not a production reference architecture. It runs in a single AWS account, which removes the account-level isolation a real multi-Region design would normally have. The data model uses last-writer-wins, which can drop concurrent writes and is not suitable for workloads that require every write to be preserved. Observability is per cluster and does not survive a full Regional loss.
 

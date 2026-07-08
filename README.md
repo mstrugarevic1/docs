@@ -18,6 +18,7 @@ This repository contains documentation and small supporting documentation toolin
 * [Kubernetes CNI Comparison](kubernetes-cni-comparison.md)
 * [Kubernetes Internals](kubernetes-internals.md) — A practical walkthrough of Kubernetes internal workflows with diagrams for deployments, routing, rollouts, autoscaling, restarts, Vault injection, and GitOps.
 * [Kubernetes Migration Checklist](kubernetes-migration-checklist.md)
+* [Kubernetes Multi-Site DR](kubernetes-multi-site-dr.md) — An active-active multi-Region DR design on AWS with two EKS clusters, Argo CD GitOps, DynamoDB Global Tables, and global traffic routing.
 * [Kubernetes Resource Sizing](kubernetes-resource-sizing.md)
 * [Legacy Application Development](legacy-application-development.md)
 * [Observability Checklist](observability-checklist.md)
