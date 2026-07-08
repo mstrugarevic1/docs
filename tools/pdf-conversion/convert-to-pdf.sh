@@ -98,9 +98,13 @@ CSS
 
 shopt -s nullglob
 
-for file in *.md; do
-  [[ "$file" == "lessons_learned.md" ]] && continue
-  base="${file%.md}"
+# Docs live in topic folders (aws/, kubernetes/, ...), one level below the
+# repo root. Relative image links inside them use ../images and ../assets, so
+# basedir stays at the repo root and the paths resolve from the file's folder.
+for file in */*.md; do
+  [[ "$(basename "$file")" == "README.md" ]] && continue
+  base="$(basename "${file%.md}")"
+  dir="$(dirname "$file")"
   title="$(sed -n 's/^# //p' "$file" | head -n 1)"
   [[ -n "$title" ]] || title="$base"
   echo "rendering $file -> $out_dir/$base.pdf"
@@ -111,5 +115,5 @@ for file in *.md; do
     --body-class markdown-body \
     --basedir . \
     --pdf-options '{"format":"A4","printBackground":true,"margin":{"top":"16mm","right":"14mm","bottom":"16mm","left":"14mm"}}'
-  mv "$base.pdf" "$out_dir/$base.pdf"
+  mv "$dir/$base.pdf" "$out_dir/$base.pdf"
 done
