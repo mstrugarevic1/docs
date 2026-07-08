@@ -2,7 +2,7 @@
 
 This document designs a portfolio project that runs a Kubernetes workload across two AWS Regions in an active-active pattern. It uses two independent EKS clusters, one per Region, deployed and kept in sync with Argo CD. A small sample application runs in both Regions at the same time, writes to a multi-Region data store, and is reachable through a single global entry point.
 
-The design is deliberately small enough to build and reason about, but close enough to a real multi-Region setup to discuss in a design review or interview. It is a learning setup, not a production reference architecture.
+The design is deliberately small enough to build and reason about, but close enough to a real multi-Region setup to discuss in a design review. It is a learning setup, not a production reference architecture.
 
 Important scope note: this is a **multi-Region, single AWS account** design. It does not use multiple AWS accounts. A production setup would normally separate Regions and environments across accounts, but that adds account boundaries, cross-account IAM, and organization management that are out of scope here.
 
@@ -25,9 +25,8 @@ Important scope note: this is a **multi-Region, single AWS account** design. It 
 - [15. Step-by-Step Implementation Plan](#15-step-by-step-implementation-plan)
 - [16. Repository Structure](#16-repository-structure)
 - [17. Architecture Diagram](#17-architecture-diagram)
-- [18. Interview Explanation](#18-interview-explanation)
-- [19. What This Project Demonstrates](#19-what-this-project-demonstrates)
-- [20. Disclaimer](#20-disclaimer)
+- [18. What This Project Demonstrates](#18-what-this-project-demonstrates)
+- [19. Disclaimer](#19-disclaimer)
 
 ## 1. Overview
 
@@ -222,14 +221,11 @@ GET  /items         Lists items (bounded scan or query)
 GET  /metrics       Prometheus metrics endpoint
 ```
 
-Endpoint details:
+Endpoint notes:
 
-- `GET /health` returns `{"status": "ok"}`. Used by the ALB target group and Route 53 / Global Accelerator health checks. It should not depend on DynamoDB, so a data-layer issue does not remove a whole Region from rotation unless intended.
-- `GET /region` returns `{"region": "eu-central-1"}` or the Region of the responding instance. This makes it easy to see which Region served a request during a failover test.
-- `POST /write` accepts a small JSON body, generates a UUID, stores `{id, region, payload, created_at}` in DynamoDB, and returns the id and the writing Region. This proves both Regions accept writes.
-- `GET /read/{id}` returns the item by id. Reading in Region B an id written in Region A demonstrates cross-Region replication.
-- `GET /items` returns a bounded list of items so replication can be observed without knowing ids.
-- `GET /metrics` exposes request counts, latency, and a Region label for Prometheus.
+- `/health` backs the ALB target group and Route 53 / Global Accelerator health checks. It should not depend on DynamoDB, so a data-layer issue does not pull a whole Region out of rotation unless intended.
+- `/region` returns the responding instance's Region, which makes it easy to see which Region served a request during a failover test.
+- `/write` and `/read/{id}` prove active-active: a write served in Region A can be read from Region B once replication catches up.
 
 Minimal endpoint sketch:
 
@@ -402,19 +398,7 @@ kubernetes-multi-site-dr/
 
 ![Kubernetes multi-site DR architecture across eu-central-1 and eu-west-1](images/kubernetes-multi-site-dr.png)
 
-## 18. Interview Explanation
-
-Short version to explain in a design review or interview:
-
-> I run the same application in two AWS Regions, `eu-central-1` and `eu-west-1`, on two independent EKS clusters. Argo CD deploys the same version to both from one Git repository, so the Regions never drift. Both Regions serve live traffic behind Route 53 latency-based routing with health checks, so users hit the nearest healthy Region and traffic fails away automatically if a Region goes down.
->
-> The data layer is what makes it active-active. I use DynamoDB Global Tables, which accept writes in both Regions and replicate between them. Conflict resolution is last-writer-wins, which I call out as the main trade-off: concurrent writes to the same item can lose one write. For workloads that can't tolerate that, I'd use Aurora Global Database and accept a single writer Region, which is active-passive for writes.
->
-> When I lose a Region, the other keeps serving with the data already replicated to it. The things I watch are per-Region error rate, failover time, and replication lag. The honest limitations are that it's a single AWS account with no account boundary between Regions, the hub Argo CD is a deployment dependency, and per-cluster monitoring disappears with the Region it runs in.
-
-The value of this answer is that it names the trade-offs, not just the components.
-
-## 19. What This Project Demonstrates
+## 18. What This Project Demonstrates
 
 - Running one Kubernetes workload active-active across two AWS Regions.
 - GitOps with Argo CD deploying identical state to multiple clusters from one repository.
@@ -425,7 +409,7 @@ The value of this answer is that it names the trade-offs, not just the component
 - Per-cluster observability and how to reason about it during a Regional loss.
 - The ability to state trade-offs and limitations honestly: data conflict handling, single-account blast radius, hub dependency, and DNS failover timing.
 
-## 20. Disclaimer
+## 19. Disclaimer
 
 This is a learning project, not a production reference architecture. It runs in a single AWS account, which removes the account-level isolation a real multi-Region design would normally have. The data model uses last-writer-wins, which can drop concurrent writes and is not suitable for workloads that require every write to be preserved. Observability is per cluster and does not survive a full Regional loss.
 
