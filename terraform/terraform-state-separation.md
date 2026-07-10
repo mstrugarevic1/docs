@@ -197,7 +197,7 @@ Predictable names make access control, audits, incident response, and state reco
 
 ## Diagram
 
-![Terraform state separation diagram](images/terraform-state-diagram.png)
+![Terraform state separation diagram](../images/terraform-state-diagram.png)
 
 ## Key Principles
 

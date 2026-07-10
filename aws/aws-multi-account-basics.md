@@ -59,7 +59,7 @@ AWS Control Tower is optional. It helps create and govern a landing zone.
 
 ## 3. Basic organizational structure
 
-![AWS Organizations account and OU structure](assets/aws-multi-account/organizations.png)
+![AWS Organizations account and OU structure](../assets/aws-multi-account/organizations.png)
 
 Reference structure:
 

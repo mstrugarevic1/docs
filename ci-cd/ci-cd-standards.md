@@ -18,7 +18,7 @@ This document defines the standard structure, quality gates, and deployment prac
 ## Recommended Pipeline Flow
 
 <p align="center">
-  <img src="images/cicdv2.png" alt="CI/CD pipeline flow" width="900">
+  <img src="../images/cicdv2.png" alt="CI/CD pipeline flow" width="900">
 </p>
 
 ## Minimum Pipeline Standard

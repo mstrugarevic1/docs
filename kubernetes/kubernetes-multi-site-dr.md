@@ -409,7 +409,7 @@ kubernetes-multi-site-dr/
 
 ## 18. Architecture Diagram
 
-![Kubernetes multi-site DR architecture across eu-central-1 and eu-west-1](images/kubernetes-multi-site-dr.png)
+![Kubernetes multi-site DR architecture across eu-central-1 and eu-west-1](../images/kubernetes-multi-site-dr.png)
 
 ## 19. What This Project Demonstrates
 

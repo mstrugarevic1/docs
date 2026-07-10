@@ -49,7 +49,7 @@ Simple example:
 
 Lower RTO and RPO values normally require more automation, more infrastructure, continuous replication, more testing, greater operational maturity, and higher cost. A workload with a 15-minute RTO needs a different operating model than a workload that can wait until the next business day.
 
-![Disaster recovery RTO and RPO overview](images/disaster-recovery.png)
+![Disaster recovery RTO and RPO overview](../images/disaster-recovery.png)
 
 ## 3. Defining Recovery Objectives
 

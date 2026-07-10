@@ -43,7 +43,7 @@ VPC Peering provides direct private connectivity between two VPCs. It can work a
 VPC Peering is non-transitive. Each side needs route-table entries for the other VPC, and security groups, NACLs, DNS settings, and application listeners still need to allow the traffic.
 
 <p align="center">
-  <img src="images/vpc-peering.png" alt="VPC Peering architecture and non-transitive routing" width="760">
+  <img src="../images/vpc-peering.png" alt="VPC Peering architecture and non-transitive routing" width="760">
 </p>
 
 Route examples:
@@ -76,7 +76,7 @@ Transit Gateway is a regional network transit hub. It connects multiple VPCs, VP
 Transit Gateway has its own route tables. This allows route-domain separation, such as production, non-production, shared services, and hybrid connectivity. It is simpler than managing a large peering mesh, but it adds cost and routing complexity.
 
 <p align="center">
-  <img src="images/tgw.png" alt="Transit Gateway hub-and-spoke architecture" width="760">
+  <img src="../images/tgw.png" alt="Transit Gateway hub-and-spoke architecture" width="760">
 </p>
 
 There are two routing layers to verify:
@@ -118,7 +118,7 @@ AWS PrivateLink provides private access to a specific service. It does not provi
 PrivateLink commonly uses an endpoint service backed by a Network Load Balancer. Consumers create interface VPC endpoints in their VPCs. Traffic stays on private AWS networking, and consumers do not need routes to the provider VPC CIDR.
 
 <p align="center">
-  <img src="images/private-link.png" alt="AWS PrivateLink architecture" width="620">
+  <img src="../images/private-link.png" alt="AWS PrivateLink architecture" width="620">
 </p>
 
 PrivateLink is useful for SaaS, cross-account services, and strict security boundaries. It avoids exposing an entire VPC network when only one service should be reachable.
@@ -140,7 +140,7 @@ Site-to-Site VPN uses encrypted IPsec tunnels over the public internet to connec
 VPN can use static routes or BGP. It is useful for initial hybrid connectivity, smaller environments, and backup connectivity. Latency and bandwidth depend on internet conditions.
 
 <p align="center">
-  <img src="images/aws-site-to-site-vpn.png" alt="AWS Site-to-Site VPN architecture" width="620">
+  <img src="../images/aws-site-to-site-vpn.png" alt="AWS Site-to-Site VPN architecture" width="620">
 </p>
 
 Both tunnels should be configured and monitored. Configuring only one tunnel removes the intended AWS tunnel redundancy.
@@ -154,7 +154,7 @@ AWS Direct Connect provides dedicated private connectivity from a data center or
 Direct Connect uses virtual interfaces and can connect through a Direct Connect Gateway to a Transit Gateway or Virtual Private Gateway. It is not automatically highly available. Resilient designs use redundant physical connections and locations, and VPN is commonly retained as backup.
 
 <p align="center">
-  <img src="images/AWS-Direct-Connect.png" alt="AWS Direct Connect architecture" width="720">
+  <img src="../images/AWS-Direct-Connect.png" alt="AWS Direct Connect architecture" width="720">
 </p>
 
 Resilient design:
@@ -312,7 +312,7 @@ Route 53 Resolver query logs
 ## 13. Decision Guide
 
 <p align="center">
-  <img src="images/decision-flow.png" alt="AWS connectivity options decision flow" width="760">
+  <img src="../images/decision-flow.png" alt="AWS connectivity options decision flow" width="760">
 </p>
 
 Actual selection also depends on cost, region, throughput, compliance, organizational ownership, and expected growth.

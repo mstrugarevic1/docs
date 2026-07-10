@@ -27,7 +27,7 @@ GitOps means the desired state of the system is stored in Git. A controller runn
 
 Basic flow:
 
-![Pull-based GitOps flow with drift correction](assets/gitops/argo-flux-drift.png)
+![Pull-based GitOps flow with drift correction](../assets/gitops/argo-flux-drift.png)
 
 This is a pull-based model. The controller runs in the cluster, reads Git, and applies the desired state.
 

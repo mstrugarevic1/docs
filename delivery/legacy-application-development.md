@@ -318,7 +318,7 @@ Deployment is not complete until post-deployment verification is performed. If v
 
 ## 12. Workflow Diagram
 
-![Legacy application development workflow](images/ai-assisted-feature-development-flow.png)
+![Legacy application development workflow](../images/ai-assisted-feature-development-flow.png)
 
 ## 13. Expected Result
 

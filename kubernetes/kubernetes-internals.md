@@ -52,7 +52,7 @@ Kubernetes is a control system. Users declare desired state through the API. Con
 The control plane stores and coordinates cluster state. Worker nodes run workloads. Most components communicate by reading from and writing to the API Server.
 
 <p align="center">
-  <img src="images/k8s-architecture.png" alt="Kubernetes architecture overview" width="760">
+  <img src="../images/k8s-architecture.png" alt="Kubernetes architecture overview" width="760">
 </p>
 
 ### Main components
@@ -93,7 +93,7 @@ Screenshot placeholder:
 Applying a manifest starts with an API write. The visible result may be a running Pod, but several components participate before the container starts.
 
 <p align="center">
-  <img src="images/kubernetes-apply-pod-running.png" alt="kubectl apply to Pod running workflow" width="760">
+  <img src="../images/kubernetes-apply-pod-running.png" alt="kubectl apply to Pod running workflow" width="760">
 </p>
 
 ### Internal workflow
@@ -151,7 +151,7 @@ Screenshot placeholder:
 External traffic usually enters Kubernetes through infrastructure outside the cluster, then moves through an ingress layer, Service abstraction, node networking, and finally a Pod.
 
 <p align="center">
-  <img src="images/browser-alb-ingress-service-pod.png" alt="Browser to ALB to Ingress to Service to Pod workflow" width="760">
+  <img src="../images/browser-alb-ingress-service-pod.png" alt="Browser to ALB to Ingress to Service to Pod workflow" width="760">
 </p>
 
 ### Internal workflow
@@ -198,7 +198,7 @@ Screenshot placeholder:
 A Deployment describes the desired rollout for a stateless workload. It manages ReplicaSets, and ReplicaSets manage Pods.
 
 <p align="center">
-  <img src="images/deployment-replicaset-pod.png" alt="Deployment to ReplicaSet to Pod workflow" width="760">
+  <img src="../images/deployment-replicaset-pod.png" alt="Deployment to ReplicaSet to Pod workflow" width="760">
 </p>
 
 ### Internal workflow
@@ -266,7 +266,7 @@ Screenshot placeholder:
 Kubernetes Secrets are native objects for sensitive values, but many companies use Vault for stronger secret lifecycle management, dynamic credentials, central audit, and separation from cluster-local storage.
 
 <p align="center">
-  <img src="images/secret-vault-pod.png" alt="Secret to Vault to Pod workflow" width="760">
+  <img src="../images/secret-vault-pod.png" alt="Secret to Vault to Pod workflow" width="760">
 </p>
 
 ### Internal workflow
@@ -299,7 +299,7 @@ Screenshot placeholder:
 Horizontal Pod Autoscaler changes replica count. It does not place Pods on nodes and it does not add nodes to the cluster.
 
 <p align="center">
-  <img src="images/hpa-metrics-server-scheduler.png" alt="HPA to Metrics Server to Scheduler workflow" width="760">
+  <img src="../images/hpa-metrics-server-scheduler.png" alt="HPA to Metrics Server to Scheduler workflow" width="760">
 </p>
 
 ### Internal workflow
@@ -374,7 +374,7 @@ Screenshot placeholder:
 GitOps stores desired deployment state in Git and uses a controller to reconcile the cluster to that state. ArgoCD is a pull-based controller: it watches Git and the cluster, compares them, and applies changes when configured or requested.
 
 <p align="center">
-  <img src="images/argocd-git-kubernetes.png" alt="ArgoCD to Git to Kubernetes workflow" width="760">
+  <img src="../images/argocd-git-kubernetes.png" alt="ArgoCD to Git to Kubernetes workflow" width="760">
 </p>
 
 ### Internal workflow

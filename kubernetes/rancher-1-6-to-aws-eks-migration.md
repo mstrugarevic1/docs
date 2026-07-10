@@ -192,7 +192,7 @@ Configuration change (Git)
 
 The migration follows a structured lifecycle to minimize risk and ensure validation at each stage.
 
-![Rancher 1.6 to Amazon EKS migration phases](images/rancher-1-6-to-aws-eks-migration-phases.png)
+![Rancher 1.6 to Amazon EKS migration phases](../images/rancher-1-6-to-aws-eks-migration-phases.png)
 
 | Phase | Main Activity | Expected Result |
 | :--- | :--- | :--- |
