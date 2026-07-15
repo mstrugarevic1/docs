@@ -11,6 +11,7 @@ This repository contains documentation and small supporting documentation toolin
 * [AWS and Hybrid Disaster Recovery Guide](aws/disaster-recovery-aws-hybrid.md)
 * [AWS Connectivity Options — Practical DevOps Reference](aws/aws-connectivity-options.md)
 * [AWS Multi-Account Basics](aws/aws-multi-account-basics.md) — A beginner-friendly introduction to AWS multi-account architecture, account responsibilities, centralized access, security, logging and basic cross-account connectivity.
+* [AWS to Azure Service Comparison](aws/aws-azure-service-comparison.md) — Approximate AWS to Azure service equivalents, with notes on where the mappings differ.
 
 ### Kubernetes
 
