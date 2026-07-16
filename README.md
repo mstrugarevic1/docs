@@ -15,6 +15,7 @@ This repository contains documentation and small supporting documentation toolin
 
 ### Kubernetes
 
+* [Argo Rollouts](kubernetes/argo-rollouts.md) — A conceptual guide to progressive delivery with Argo Rollouts, including Blue/Green, Canary, traffic routing, analysis, rollback behavior, and Argo CD responsibilities.
 * [Kubernetes CNI Comparison](kubernetes/kubernetes-cni-comparison.md)
 * [Kubernetes Internals](kubernetes/kubernetes-internals.md) — A practical walkthrough of Kubernetes internal workflows with diagrams for deployments, routing, rollouts, autoscaling, restarts, Vault injection, and GitOps.
 * [Kubernetes Migration Checklist](kubernetes/kubernetes-migration-checklist.md)
