@@ -1,6 +1,33 @@
 # Argo Rollouts
 
-## Overview
+This document is a conceptual overview of Argo Rollouts for engineers who already understand the basic Kubernetes workload model. It explains what Argo Rollouts adds on top of standard Deployments and why teams use it for controlled production releases.
+
+The focus is Blue/Green deployments, Canary deployments, traffic management, automated analysis, experiments, abort and rollback behaviour, and operational considerations.
+
+This is not an installation guide or a hands-on lab. It does not include manifests, commands, Helm values, or provider-specific configuration.
+
+## Table of Contents
+
+1. [Overview](#1-overview)
+2. [The Problem Argo Rollouts Solves](#2-the-problem-argo-rollouts-solves)
+3. [Core Components](#3-core-components)
+4. [Deployment Strategies](#4-deployment-strategies)
+5. [Blue/Green Deployment](#5-bluegreen-deployment)
+6. [Canary Deployment](#6-canary-deployment)
+7. [Traffic Management](#7-traffic-management)
+8. [Rollout Steps and Pauses](#8-rollout-steps-and-pauses)
+9. [Analysis and Automated Validation](#9-analysis-and-automated-validation)
+10. [Experiments](#10-experiments)
+11. [Rollback and Abort Behaviour](#11-rollback-and-abort-behaviour)
+12. [Argo Rollouts and Argo CD](#12-argo-rollouts-and-argo-cd)
+13. [Operational Considerations](#13-operational-considerations)
+14. [Limitations and Common Misconceptions](#14-limitations-and-common-misconceptions)
+15. [When to Use Argo Rollouts](#15-when-to-use-argo-rollouts)
+16. [Blue/Green Versus Canary](#16-bluegreen-versus-canary)
+17. [Summary](#17-summary)
+18. [References](#18-references)
+
+## 1. Overview
 
 Argo Rollouts is a Kubernetes controller and a set of custom resources for progressive delivery. It extends Kubernetes with rollout strategies that are more controlled than the standard `Deployment` rolling update.
 
@@ -10,7 +37,7 @@ Progressive delivery means releasing a change gradually and validating it before
 
 Argo Rollouts reduces this risk by controlling promotion from the old stable ReplicaSet to the new candidate ReplicaSet.
 
-## The Problem It Solves
+## 2. The Problem Argo Rollouts Solves
 
 A standard Kubernetes rolling update gradually replaces old pods with new pods. Traffic usually continues through the same Kubernetes Service, and Kubernetes primarily evaluates whether pods are created, scheduled, running, and ready.
 
@@ -18,7 +45,9 @@ That is a narrow safety check. A new pod can pass readiness while returning inco
 
 Progressive delivery reduces the blast radius. A new version can receive preview traffic, a small percentage of production traffic, or no production traffic until validation succeeds. Promotion can pause for human review or depend on metrics such as error rate, latency, availability, restart count, or successful transaction rate.
 
-## Core Components
+## 3. Core Components
+
+Argo Rollouts uses a small set of required resources and several optional resources. The required pieces replace the Deployment rollout controller for a workload. The optional pieces add validation, traffic routing, or GitOps integration.
 
 Required components:
 
@@ -47,7 +76,9 @@ Related but separate component:
 
 Metric analysis, experiments, Argo CD, and service-mesh integration are optional capabilities. Services used for Blue/Green and traffic-routed Canary strategies are part of those rollout designs.
 
-## Deployment Strategies
+## 4. Deployment Strategies
+
+Kubernetes and Argo Rollouts support several ways to move from one application version to another. The right strategy depends on how much control is needed, how much extra capacity is available, and whether the team can validate a release with useful signals.
 
 ### Kubernetes RollingUpdate
 
@@ -57,15 +88,11 @@ This is simple and suitable for many low-risk applications.
 
 ### Blue/Green
 
-Blue/Green keeps two application versions available at the same time. One version is active and receives production traffic. The other version is available for preview and validation.
-
-Promotion changes which version receives production traffic. In Kubernetes this usually means changing Service selectors, not moving traffic between clusters. The old version can remain available briefly after promotion, which allows faster rollback if a problem appears immediately.
+Blue/Green keeps two application versions available at the same time. One version is active and receives production traffic. The other version is available for preview and validation. Promotion changes which version receives production traffic.
 
 ### Canary
 
-Canary introduces a new version gradually. A small part of capacity or traffic uses the candidate version first. Exposure then increases through rollout steps.
-
-Each step can pause for manual review, wait for a fixed duration, run analysis, start an experiment, or continue automatically. The rollout completes only when the candidate becomes the stable version.
+Canary introduces a new version gradually. A small part of capacity or traffic uses the candidate version first. Exposure then increases through rollout steps until the candidate becomes stable.
 
 | Area | RollingUpdate | Blue/Green | Canary |
 |---|---|---|---|
@@ -76,7 +103,11 @@ Each step can pause for manual review, wait for a fixed duration, run analysis, 
 | Requirements | Kubernetes Deployment and Service | Additional Services and capacity | Steps; optional traffic provider and metrics |
 | Best fit | Low-risk changes | Clear cutover and preview validation | Gradual exposure with useful live signals |
 
-## Blue/Green Deployment Flow
+## 5. Blue/Green Deployment
+
+Blue/Green is useful when a team wants to validate a complete candidate version before sending production traffic to it. The key operation is promotion: the production Service changes from selecting the stable ReplicaSet to selecting the candidate ReplicaSet.
+
+Conceptual lifecycle:
 
 1. The stable version serves production traffic.
 2. A new ReplicaSet is created.
@@ -90,33 +121,35 @@ Each step can pause for manual review, wait for a fixed duration, run analysis, 
 
 ```mermaid
 flowchart LR
-    Users[Users] --> ActiveBefore[Active Service]
-    ActiveBefore --> Stable[Stable version v1]
+    Users[Users] --> Active[Active Service]
+    Active --> Stable[Stable ReplicaSet v1]
 
     Validation[Testing and validation] --> Preview[Preview Service]
-    Preview --> Candidate[Candidate version v2]
+    Preview --> Candidate[Candidate ReplicaSet v2]
 
     Candidate --> Decision{Promote?}
     Decision -->|No| Abort[Abort rollout]
-    Decision -->|Yes| ActiveAfter[Active Service after promotion]
+    Decision -->|Yes| Switch[Active Service selector changes]
 
-    ActiveAfter --> Candidate
+    Switch --> Candidate
     Stable -. retained during scale-down delay .-> Rollback[Fast rollback window]
 ```
 
-The **Active Service** is the production entry point. Before promotion, it selects the stable version. After promotion, it selects the candidate version.
+Before promotion, the Active Service selects the stable ReplicaSet and the Preview Service selects the candidate ReplicaSet. After promotion, the same Active Service selects the candidate ReplicaSet. Promotion changes Service selection inside Kubernetes rather than moving workloads between clusters.
 
-The **Preview Service** is a separate entry point for validation. It can be used by smoke tests, internal checks, or pre-promotion analysis without sending normal production traffic to the candidate.
-
-The **stable version** is the current production ReplicaSet. The **candidate version** is the new ReplicaSet created from the changed Pod template.
-
-**Promotion** changes which ReplicaSet receives production traffic. In a normal Blue/Green rollout this is a Service selector change inside the cluster, not a physical movement of traffic between clusters.
-
-The **scale-down delay** keeps the previous ReplicaSet available for a short period after promotion. That creates a **rollback window** where traffic can switch back quickly. Teams should still test rollback behavior because controller reconciliation, load balancer updates, application startup, and external dependencies can affect timing.
+The scale-down delay keeps the previous ReplicaSet available for a short period after promotion. That creates a rollback window where traffic can switch back quickly. Teams should still test rollback behavior because controller reconciliation, load balancer updates, application startup, and external dependencies can affect timing.
 
 Promotion can be manual or automatic. Manual promotion waits for an operator decision. Automatic promotion continues after configured conditions, such as a delay or successful analysis.
 
-## Canary Deployment Flow
+> **Production note:** Blue/Green does not automatically guarantee zero downtime. Cutover behaviour depends on the Service, ingress controller, cloud load balancer, readiness checks, and connection handling.
+
+> **AWS ALB note:** AWS ALB behaviour is provider-specific. Switching Kubernetes Service selectors can temporarily leave an ALB target group without healthy targets, so Blue/Green with AWS ALB should be validated before it is described as zero-downtime. Traffic-routed Canary through the ALB integration is a different pattern from basic Blue/Green Service selector switching.
+
+## 6. Canary Deployment
+
+Canary is useful when a team wants to reduce risk by exposing a new version gradually. The candidate receives limited traffic or capacity first, then progresses only when validation passes.
+
+Conceptual lifecycle:
 
 1. The stable version initially receives all traffic.
 2. A candidate ReplicaSet is created.
@@ -145,22 +178,23 @@ flowchart LR
     Validate3 -->|No| Abort
 ```
 
+> **Traffic note:** These percentages represent explicit request weights when a supported traffic-routing provider is configured. Without traffic routing, Argo Rollouts approximates the requested weight through stable and Canary replica counts.
+
 The percentages are examples. Argo Rollouts does not require those exact values.
 
-There are two important Canary models:
+## 7. Traffic Management
 
-* **Replica-based Canary** approximates traffic share by scaling stable and candidate pods.
-* **Traffic-routed Canary** uses a supported ingress controller or service mesh to set explicit request-routing weights.
+Traffic management determines whether rollout weights are approximate pod ratios or explicit request-routing rules. This distinction matters because a "10% canary" can mean different things depending on whether a traffic provider is involved.
 
-## Replica-Based Canary
+### Replica-Based Canary
 
 In a replica-based Canary, Argo Rollouts approximates traffic percentages using the number of stable and canary pods. Kubernetes Services then distribute requests across the selected ready pods.
 
 For example, nine stable pods and one canary pod approximate a 10% canary. That does not guarantee exactly 10% of requests reach the canary. Small replica counts make percentages coarse, and long-lived connections, uneven request rates, client behavior, and session affinity can skew distribution.
 
-Replica-based Canary is useful when the application does not need precise traffic weights and the replica count is large enough to make the approximation meaningful.
+> **Production note:** Without traffic routing, Canary weights are approximations. Use this model only when the application can tolerate uneven request distribution.
 
-## Traffic-Routed Canary
+### Traffic-Routed Canary
 
 Traffic-routed Canary integrates Argo Rollouts with a supported ingress controller or service mesh. The routing provider receives explicit traffic-weight changes, while ReplicaSet scaling can be managed separately.
 
@@ -175,19 +209,23 @@ Common integration categories include:
 
 Supported features, limitations, and behavior differ by provider. Provider-specific routing semantics should be checked before relying on exact behavior.
 
-## Rollout Steps and Pauses
+## 8. Rollout Steps and Pauses
 
-Rollout steps define how a candidate version progresses. A step can set a new traffic or replica weight, pause for a fixed duration, pause until manual promotion, run analysis, start an experiment, continue to the next exposure level, or abort when validation fails.
+Rollout steps define how a candidate version progresses from first exposure to full promotion. They are useful when each step has a clear validation signal or approval point.
+
+A step can set a new traffic or replica weight, pause for a fixed duration, pause until manual promotion, run analysis, start an experiment, continue to the next exposure level, or abort when validation fails.
 
 A **timed pause** waits for a fixed duration before continuing. An **indefinite pause** waits until an operator or automation resumes the rollout. **Manual promotion** advances a paused rollout by explicit decision. **Automatic promotion** advances when configured conditions pass. **Full promotion** completes the rollout so the candidate becomes the stable version.
 
 Pauses are useful only when the team knows what signal should be checked during the pause. Waiting longer without meaningful validation does not make a rollout safer.
 
-## Analysis and Automated Validation
+## 9. Analysis and Automated Validation
+
+Analysis connects rollout progression to external signals. It lets a rollout continue, stop, or wait based on measurements rather than only pod readiness.
 
 An `AnalysisTemplate` defines a validation check. It can describe which external metric provider to query, how often to query it, and which success or failure conditions decide the result.
 
-An `AnalysisRun` is a concrete execution of that template. A rollout can run analysis inline as a blocking step or in the background while traffic continues to shift. Failed analysis can pause or abort a rollout depending on the rollout configuration.
+An `AnalysisRun` is a concrete execution of that template. A `Successful` AnalysisRun allows the rollout to continue. A `Failed` AnalysisRun normally causes the rollout to abort. An `Inconclusive` AnalysisRun pauses the rollout and requires operator action. Measurement errors, consecutive error limits, failure limits, and inconclusive limits can affect the final AnalysisRun phase.
 
 Useful metrics may include:
 
@@ -219,30 +257,35 @@ flowchart LR
     Continue --> Metrics
 ```
 
-Metric quality is critical. Weak queries, missing labels, delayed data, noisy thresholds, or metrics that do not represent user impact can promote a broken version or reject a healthy one.
+> **Production note:** Metric quality is critical. Weak queries, missing labels, delayed data, noisy thresholds, or metrics that do not represent user impact can promote a broken version or reject a healthy one.
 
-## Experiments
+## 10. Experiments
+
+Experiments are temporary validation resources used during rollout evaluation. They are useful when a team needs to compare versions before promotion rather than only observe the candidate under normal rollout traffic.
 
 Argo Rollouts Experiments run temporary ReplicaSets and optional analysis during rollout validation. They can run multiple versions simultaneously, compare a baseline and candidate version, execute analysis against both, and support controlled tests before promotion.
 
 An Experiment is not the same thing as a long-running production Deployment. It is a temporary validation resource, and its ReplicaSets are normally cleaned up after the experiment completes or terminates.
 
-## Rollback and Abort Behaviour
+## 11. Rollback and Abort Behaviour
 
-Pausing, aborting, promoting, and rolling back are different operations.
+Rollback and abort are often discussed together, but they are not the same operation. Argo Rollouts can stop runtime progression and redirect traffic, while reverting the declared application version is a separate desired-state change.
 
 * **Pause** stops progression at the current point.
-* **Abort** stops the current rollout attempt.
-* **Promote** advances the candidate toward becoming stable.
-* **Rollback** moves desired state back to a previous revision.
+* **Abort** stops the current rollout attempt and returns traffic to the stable version when supported by the selected strategy.
+* **Promotion** advances the candidate toward becoming the stable version.
+* **Runtime traffic return** sends production traffic or capacity back to the stable ReplicaSet without necessarily changing Git.
+* **Rollback by specification** means restoring an older declarative Rollout revision, usually directly or through GitOps.
 
-When a rollout is aborted, the stable version remains or again becomes the production target depending on the strategy and the rollout state. Resources may not disappear immediately because scale-down delays and controller reconciliation still apply.
+Aborting stops the current rollout and returns traffic to the stable version when supported by the selected strategy. Restoring an older declarative revision is a separate change to the Rollout specification, usually performed directly or through GitOps.
 
-Rollback behavior differs between Blue/Green and Canary. Blue/Green can switch the active Service back while the old ReplicaSet is retained. Canary can return traffic or capacity to the stable ReplicaSet, especially when traffic routing leaves stable capacity available. Teams should test rollback paths instead of assuming they are instantaneous.
+Resources may not disappear immediately because scale-down delays and controller reconciliation still apply. Rollback behavior differs between Blue/Green and Canary. Blue/Green can switch the active Service back while the old ReplicaSet is retained. Canary can return traffic or capacity to the stable ReplicaSet, especially when traffic routing leaves stable capacity available.
 
-## Argo Rollouts and Argo CD
+Operational teams should test abort and rollback paths instead of assuming they are instantaneous.
 
-Argo CD and Argo Rollouts solve different problems.
+## 12. Argo Rollouts and Argo CD
+
+Argo CD and Argo Rollouts solve different problems. They are commonly used together, but one does not replace the other.
 
 ### Argo CD
 
@@ -268,7 +311,46 @@ The new version becomes stable or the rollout is aborted
 
 Argo CD may display a Rollout as progressing or suspended while Argo Rollouts waits at a pause or analysis step. Argo CD does not itself perform Canary traffic management.
 
-## When to Use Argo Rollouts
+## 13. Operational Considerations
+
+Progressive delivery changes the release process, but it does not remove normal production engineering work. The application, cluster, traffic layer, metrics, and operational process all need to support two versions running at the same time.
+
+Argo Rollouts adds CRDs and a controller that must be installed, upgraded, monitored, and authorized. It can create extra ReplicaSets and temporary workloads, so clusters need enough capacity to run stable and candidate versions at the same time.
+
+> **Production note:** Plan capacity for overlap. Blue/Green and traffic-routed Canary can temporarily require enough resources for both stable and candidate versions.
+
+Autoscaling requires care. The HPA sets the desired replica count on the Rollout scale subresource, while the Argo Rollouts controller allocates pods across ReplicaSets according to the strategy. PodDisruptionBudgets, readiness probes, liveness probes, and startup probes still matter because they affect availability and endpoint selection.
+
+Application design must support two versions running at the same time. Backward-compatible APIs, events, queues, background workers, session handling, and long-lived connections all need review. Stateful workloads are harder because traffic movement and ReplicaSet scaling do not automatically solve data compatibility.
+
+> **Production note:** Database migrations must remain compatible with both versions during a rollout. Destructive migrations can break the stable version while it is still serving traffic. Expand-and-contract migration patterns are safer for progressive delivery.
+
+Operational teams should also consider:
+
+* Promotion permissions and RBAC.
+* Metric reliability and alert quality.
+* Ingress-controller-specific behavior.
+* Rollback testing.
+* Version pinning and controller upgrades.
+* Behavior during consecutive application updates.
+
+## 14. Limitations and Common Misconceptions
+
+Argo Rollouts gives teams more deployment control, but it does not make unsafe application changes safe by itself. These limitations are common sources of incorrect expectations.
+
+* A healthy pod does not necessarily mean a healthy application.
+* Canary percentages are not always exact without traffic routing.
+* Argo Rollouts does not automatically define meaningful application metrics.
+* Argo Rollouts does not replace an ingress controller or service mesh.
+* Argo Rollouts does not replace Argo CD.
+* Blue/Green does not automatically guarantee zero downtime.
+* Rollback cannot undo incompatible database changes.
+* More rollout stages do not automatically make a deployment safer.
+* Progressive delivery still requires monitoring, capacity planning, and operational ownership.
+
+## 15. When to Use Argo Rollouts
+
+Use Argo Rollouts when the release risk justifies the extra controller, resources, and operating model. A standard Deployment is still the simpler choice when readiness checks and RollingUpdate already provide acceptable risk.
 
 Argo Rollouts is useful for:
 
@@ -281,8 +363,6 @@ Argo Rollouts is useful for:
 * Applications where fast rollback is important.
 * Releases that benefit from gradual exposure.
 
-## When It May Be Unnecessary
-
 A standard Deployment may be enough for:
 
 * Internal or low-risk applications.
@@ -292,58 +372,29 @@ A standard Deployment may be enough for:
 * Teams without capacity to maintain additional controllers and rollout logic.
 * Deployments where readiness checks and RollingUpdate already provide acceptable risk.
 
-Argo Rollouts adds operational complexity. It should solve a real release problem, not be added only because progressive delivery sounds safer.
+Argo Rollouts should solve a real release problem, not be added only because progressive delivery sounds safer.
 
-## Operational Considerations
+## 16. Blue/Green Versus Canary
 
-Argo Rollouts adds CRDs and a controller that must be installed, upgraded, monitored, and authorized. It can create extra ReplicaSets and temporary workloads, so clusters need enough capacity to run stable and candidate versions at the same time.
-
-Autoscaling requires care. The HPA sets the desired replica count on the Rollout scale subresource, while the Argo Rollouts controller allocates pods across ReplicaSets according to the strategy. PodDisruptionBudgets, readiness probes, liveness probes, and startup probes still matter because they affect availability and endpoint selection.
-
-Application design must support two versions running at the same time. Backward-compatible APIs, events, queues, background workers, session handling, and long-lived connections all need review. Stateful workloads are harder because traffic movement and ReplicaSet scaling do not automatically solve data compatibility.
-
-Database migrations are a common failure point. A new version may require a schema change while the old version is still running. Destructive migrations can break the stable version during the rollout. Expand-and-contract migrations are safer: add compatible schema first, deploy compatible application versions, then remove old fields only after no running version needs them.
-
-Operational teams should also consider:
-
-* Promotion permissions and RBAC.
-* Metric reliability and alert quality.
-* Ingress-controller-specific behavior.
-* Rollback testing.
-* Version pinning and controller upgrades.
-* Behavior during consecutive application updates.
-
-## Limitations and Common Misconceptions
-
-* A healthy pod does not necessarily mean a healthy application.
-* Canary percentages are not always exact without traffic routing.
-* Argo Rollouts does not automatically define meaningful application metrics.
-* Argo Rollouts does not replace an ingress controller or service mesh.
-* Argo Rollouts does not replace Argo CD.
-* Blue/Green does not automatically guarantee zero downtime.
-* Rollback cannot undo incompatible database changes.
-* More rollout stages do not automatically make a deployment safer.
-* Progressive delivery still requires monitoring, capacity planning, and operational ownership.
-
-## Blue/Green Versus Canary
+Blue/Green and Canary both reduce deployment risk, but they optimize for different operating models. Blue/Green gives a clear cutover between complete versions. Canary gives gradual exposure and finer control, but it depends more heavily on traffic distribution and metric quality.
 
 Blue/Green is generally appropriate when a complete candidate environment must be validated before cutover, fast switching between complete versions is valuable, additional temporary capacity is acceptable, and a clear promotion event is desired.
 
 Canary is generally appropriate when risk should be reduced through gradual user exposure, the application can be validated using live production traffic, traffic weighting or sufficient replica counts are available, and the team has reliable monitoring and automated analysis.
 
-Neither strategy is universally better. Blue/Green gives a clear switch between complete versions. Canary gives gradual exposure and finer control, but it depends more heavily on traffic distribution and metric quality.
+Neither strategy is universally better.
 
-## Summary
+## 17. Summary
 
-Argo Rollouts adds progressive delivery controls to Kubernetes. It replaces the standard Deployment resource with a Rollout resource that can manage stable and candidate ReplicaSets through Blue/Green, Canary, pauses, analysis, experiments, and traffic routing.
+Argo Rollouts adds progressive delivery controls to Kubernetes through a Rollout resource and controller. It manages stable and candidate ReplicaSets through strategies such as Blue/Green and Canary.
 
-Blue/Green validates a candidate version separately and then switches production traffic to it. Canary exposes the candidate gradually until it becomes stable. Replica-based Canary approximates request share through pod counts, while traffic-routed Canary uses an ingress controller or service mesh for explicit request weights.
+Blue/Green validates a complete candidate version before switching production traffic. Canary exposes the candidate gradually. Replica-based Canary approximates request share through pod counts, while traffic-routed Canary uses an ingress controller or service mesh for explicit request weights.
 
-Automated analysis can promote or stop a rollout based on metrics, but it is only as reliable as the metrics and thresholds behind it. Argo CD can apply and observe Rollout resources from Git, but Argo Rollouts performs the runtime rollout control.
+Automated analysis can promote or stop a rollout based on metrics. Argo CD can apply and observe Rollout resources from Git, but Argo Rollouts performs the runtime rollout control.
 
-The trade-off is safer and more controlled releases in exchange for additional controller, configuration, capacity, routing, monitoring, and operational complexity.
+The main trade-off is more deployment control in exchange for additional controller, capacity, routing, metrics, and operational complexity.
 
-## References
+## 18. References
 
 * [Argo Rollouts documentation](https://argoproj.github.io/argo-rollouts/)
 * [Argo Rollouts concepts](https://argoproj.github.io/argo-rollouts/concepts/)
