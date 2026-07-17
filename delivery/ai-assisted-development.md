@@ -28,7 +28,7 @@ AI tools work better when the repository contains durable context that can be re
 
 Useful context files include:
 - `README.md`
-- repository instructions such as `GEMINI.md`
+- repository instructions such as `AGENTS.md`, `CLAUDE.md`, or `GEMINI.md`
 - `docs/*.md`
 - ADRs
 - runbooks
@@ -80,21 +80,23 @@ Example:
 - Do not store secrets in documentation, prompts, or test fixtures.
 ```
 
-## Instructions, Skills, and MCP
+## Instructions, Skills, and Tool Access
 
 These are different kinds of context and capability:
 
 - Repository instructions: persistent project context and constraints stored with the repository.
 - Skills: reusable task-specific procedures that can be loaded when relevant.
-- MCP servers: controlled access to external tools or data sources.
+- Tool connectors or MCP servers: controlled access to external tools or data sources.
 
-Practical MCP examples include:
+Practical tool-access examples include:
 - issue tracker access for ticket context
 - documentation lookup for current API behavior
 - cloud inventory for read-only resource discovery
 - source-control metadata for commits, branches, pull requests, and reviews
 
 External access should follow least privilege. Avoid exposing unnecessary credentials, secrets, or production-changing access. Read-only access is usually enough for discovery and planning.
+
+Give write access only for the task being performed. A tool that can read tickets does not also need permission to deploy, rotate secrets, or modify production resources.
 
 ## Execution Controls
 
@@ -106,9 +108,23 @@ Before allowing an AI agent to modify files or run commands:
 - use sandboxing where available
 - use approval modes where available
 - avoid automatic access to secrets
+- require review before commit or push
 - keep changes small enough to review in one sitting
 
 These controls are not a heavy process. They are guardrails that make the final diff easier to understand and safer to own.
+
+## Commit, Push, and Secrets
+
+Commit and push are ownership actions. Let an AI agent prepare them only after the diff has been reviewed.
+
+Before committing:
+- inspect `git status` and the staged diff
+- stage only files related to the request
+- keep local notes, generated scratch files, and unrelated changes out of the commit
+- confirm no secrets, tokens, private keys, certificates, connection strings, or real credentials are included
+- use placeholders in examples and documentation
+
+If a secret is accidentally exposed to an AI tool, terminal output, commit, log, or review comment, stop normal work and follow the secret-rotation process. Do not paste or summarize the secret while discussing the incident.
 
 ## General Workflow
 
