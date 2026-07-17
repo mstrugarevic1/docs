@@ -100,27 +100,49 @@ Canary exposes the candidate gradually. Each step can pause, run analysis, or in
 
 ## 5. Blue/Green Deployment
 
-Blue/Green is useful when a full candidate version should be validated before production cutover.
-
-Flow:
-
-1. Stable version serves production traffic.
-2. Candidate ReplicaSet is created.
-3. Preview Service points to the candidate.
-4. Active Service still points to stable.
-5. Candidate is validated.
-6. Promotion changes Active Service selection to the candidate.
-7. Previous stable version is retained briefly.
-8. Previous version is scaled down after the delay.
-9. Failed validation stops promotion or aborts the rollout.
+Blue/Green keeps production traffic on the active Service while the preview Service exposes the candidate. Promotion switches the active Service to the candidate.
 
 <p align="center">
   <img src="../images/argo-rollouts-blue-green.png" alt="Argo Rollouts Blue/Green deployment flow" width="82%">
 </p>
 
+Minimal Rollout strategy:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: payments-api
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: payments-api
+  template:
+    metadata:
+      labels:
+        app: payments-api
+    spec:
+      containers:
+        - name: app
+          image: registry.example.com/payments-api:1.2.0
+  strategy:
+    blueGreen:
+      activeService: payments-api-active
+      previewService: payments-api-preview
+      autoPromotionEnabled: false
+      scaleDownDelaySeconds: 60
+```
+
+Promotion can be manual:
+
+```bash
+kubectl argo rollouts promote payments-api -n payments
+```
+
 Promotion changes Kubernetes Service selection. It does not move workloads between clusters.
 
-The scale-down delay keeps the previous version available for fast rollback. Manual promotion waits for an operator; automatic promotion continues when configured conditions pass.
+The scale-down delay keeps the previous version available for fast rollback.
 
 > **Production note:** Blue/Green does not automatically mean zero downtime. Cutover depends on readiness, Service updates, ingress behaviour, cloud load balancers, and connection handling.
 
@@ -128,23 +150,56 @@ The scale-down delay keeps the previous version available for fast rollback. Man
 
 ## 6. Canary Deployment
 
-Canary is useful when the candidate should receive real traffic gradually.
-
-Flow:
-
-1. Stable version starts with all traffic.
-2. Candidate ReplicaSet is created.
-3. A small share reaches the candidate.
-4. The rollout pauses or evaluates metrics.
-5. Candidate exposure increases.
-6. The process repeats until full promotion.
-7. Candidate becomes stable.
-8. Previous version is scaled down.
-9. Failed validation aborts the rollout.
+Canary increases candidate exposure through ordered steps. Each step can set traffic weight, pause, or run analysis before continuing.
 
 <p align="center">
   <img src="../images/argo-rollouts-canary.png" alt="Argo Rollouts Canary deployment flow" width="82%">
 </p>
+
+Minimal traffic-routed Rollout strategy:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: payments-api
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: payments-api
+  template:
+    metadata:
+      labels:
+        app: payments-api
+    spec:
+      containers:
+        - name: app
+          image: registry.example.com/payments-api:1.2.0
+  strategy:
+    canary:
+      stableService: payments-api-stable
+      canaryService: payments-api-canary
+      trafficRouting:
+        nginx:
+          stableIngress: payments-api
+      steps:
+        - setWeight: 10
+        - pause:
+            duration: 5m
+        - analysis:
+            templates:
+              - templateName: payments-api-success-rate
+        - setWeight: 50
+        - pause: {}
+        - setWeight: 100
+```
+
+Abort returns traffic to the stable ReplicaSet when the strategy supports it:
+
+```bash
+kubectl argo rollouts abort payments-api -n payments
+```
 
 > **Traffic note:** These percentages are exact request weights only when a supported traffic-routing provider is configured. Without traffic routing, Argo Rollouts approximates the weight with stable and Canary replica counts.
 
@@ -191,9 +246,41 @@ Pauses are useful only when someone or something checks a meaningful signal.
 
 ## 9. Analysis and Automated Validation
 
-Analysis ties rollout progression to metrics instead of pod readiness alone.
+Analysis ties rollout progression to metrics instead of pod readiness alone. A rollout step references an `AnalysisTemplate`; Argo Rollouts creates an `AnalysisRun` from it.
 
-`AnalysisTemplate` defines the check: provider, query, interval, success conditions, and failure conditions. `AnalysisRun` is one execution of that template.
+Example metric gate:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: payments-api-success-rate
+spec:
+  metrics:
+    - name: success-rate
+      interval: 1m
+      count: 3
+      successCondition: result[0] >= 0.99
+      failureLimit: 1
+      provider:
+        prometheus:
+          address: http://prometheus.monitoring.svc.cluster.local:9090
+          query: |
+            sum(rate(http_requests_total{app="payments-api",status!~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{app="payments-api"}[5m]))
+```
+
+Canary step using it:
+
+```yaml
+steps:
+  - setWeight: 10
+  - analysis:
+      templates:
+        - templateName: payments-api-success-rate
+  - setWeight: 50
+```
 
 AnalysisRun outcomes:
 
@@ -210,18 +297,6 @@ Typical metrics:
 * pod restarts
 * business metrics
 * successful transaction rate
-
-```mermaid
-flowchart LR
-    Deploy[Deploy candidate] --> LimitedTraffic[Send limited traffic]
-    LimitedTraffic --> Metrics[Collect metrics]
-    Metrics --> Decision{Thresholds satisfied?}
-
-    Decision -->|Yes| Continue[Increase exposure]
-    Decision -->|No| Abort[Abort rollout]
-
-    Continue --> Metrics
-```
 
 > **Production note:** Bad queries or weak thresholds can promote a broken version or reject a healthy one.
 
