@@ -114,21 +114,9 @@ Flow:
 8. Previous version is scaled down after the delay.
 9. Failed validation stops promotion or aborts the rollout.
 
-```mermaid
-flowchart LR
-    Users[Users] --> Active[Active Service]
-    Active --> Stable[Stable ReplicaSet v1]
-
-    Validation[Testing and validation] --> Preview[Preview Service]
-    Preview --> Candidate[Candidate ReplicaSet v2]
-
-    Candidate --> Decision{Promote?}
-    Decision -->|No| Abort[Abort rollout]
-    Decision -->|Yes| Switch[Active Service selector changes]
-
-    Switch --> Candidate
-    Stable -. retained during scale-down delay .-> Rollback[Fast rollback window]
-```
+<p align="center">
+  <img src="../images/argo-rollouts-blue-green.png" alt="Argo Rollouts Blue/Green deployment flow" width="82%">
+</p>
 
 Promotion changes Kubernetes Service selection. It does not move workloads between clusters.
 
@@ -154,22 +142,9 @@ Flow:
 8. Previous version is scaled down.
 9. Failed validation aborts the rollout.
 
-```mermaid
-flowchart LR
-    Start[Stable v1: 100%] --> Step1[Stable v1: 90% / Canary v2: 10%]
-    Step1 --> Validate1{Validation passes?}
-
-    Validate1 -->|Yes| Step2[Stable v1: 75% / Canary v2: 25%]
-    Validate1 -->|No| Abort[Abort and return to stable v1]
-
-    Step2 --> Validate2{Validation passes?}
-    Validate2 -->|Yes| Step3[Stable v1: 50% / Canary v2: 50%]
-    Validate2 -->|No| Abort
-
-    Step3 --> Validate3{Validation passes?}
-    Validate3 -->|Yes| Complete[Canary v2 becomes stable: 100%]
-    Validate3 -->|No| Abort
-```
+<p align="center">
+  <img src="../images/argo-rollouts-canary.png" alt="Argo Rollouts Canary deployment flow" width="82%">
+</p>
 
 > **Traffic note:** These percentages are exact request weights only when a supported traffic-routing provider is configured. Without traffic routing, Argo Rollouts approximates the weight with stable and Canary replica counts.
 
