@@ -38,7 +38,7 @@ This repository contains documentation and small supporting documentation toolin
 ### CI/CD
 
 * [CI/CD Standards](ci-cd/ci-cd-standards.md) — A baseline for CI/CD pipeline structure, quality gates, artifact handling, deployment practices, rollback, and operational expectations.
-* [DORA Metrics](ci-cd/dora-metrics.md) — A short guide to the four classic DORA metrics, data collection, implementation options, and example dashboard architecture.
+* [DORA Metrics](ci-cd/dora-metrics.md) — A short guide to DORA metric definitions, reliability, data collection, example calculations, and dashboard structure.
 
 ### Delivery and operations
 
