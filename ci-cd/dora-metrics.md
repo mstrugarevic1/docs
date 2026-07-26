@@ -2,113 +2,281 @@
 
 ## Purpose
 
-This document explains how to use DORA metrics to measure software delivery performance. It belongs in this repository because the existing CI/CD and GitOps examples describe delivery workflows, while DORA metrics describe how those workflows can be measured.
+This document explains what DORA metrics are, what they measure, where the data usually comes from, and which implementation options are commonly used.
 
-## Overview
+It is intended for engineers who want to understand delivery performance without turning the topic into a full observability or platform engineering project.
 
-DORA metrics are a small set of delivery measurements from the DevOps Research and Assessment program. They help teams understand whether software changes move to production quickly and whether those changes are stable after release.
+DORA metrics are useful when they help teams understand software delivery flow. They are not useful when they are used as individual performance scores.
 
-The classic model uses four metrics: two for throughput and two for stability. Current DORA guidance also discusses a five-metric model and renames the old recovery metric to failed deployment recovery time. This document uses the classic four-metric model because it is still widely used by GitLab, DevLake, Harness, LinearB, Swarmia, and custom dashboards.
+---
 
-## Metrics
+## What are DORA metrics?
 
-| Metric | What it measures | Typical source |
+DORA metrics are a small set of software delivery metrics used to understand how quickly and safely teams deliver changes to production.
+
+The classic four metrics are:
+
+| Metric | What it measures | Main question |
 | --- | --- | --- |
-| Deployment Frequency | How often successful production deployments happen. | CD system, GitOps controller, deployment events |
-| Lead Time for Changes | Time from code commit or merged change to successful production deployment. | Git, pull requests, CI/CD, deployment events |
-| Change Failure Rate | Percentage of production deployments that cause an incident, rollback, hotfix, or immediate remediation. | Deployment events, incident system, rollback records |
-| Time to Restore Service | Time needed to restore service after a production failure caused by a change. | Incident system, monitoring alerts, deployment records |
+| Deployment Frequency | How often changes reach production | How often do we deploy? |
+| Lead Time for Changes | Time from code change to production | How long does delivery take? |
+| Change Failure Rate | Percentage of deployments causing failure | How often do changes break production? |
+| Time to Restore Service | Time to recover after failure | How quickly do we recover? |
 
-## How Data Is Collected
+Some newer DORA models also include reliability as an additional dimension, but many tools and dashboards still focus on the classic four metrics.
+
+---
+
+## Why they matter
+
+DORA metrics are useful because they connect delivery speed with operational stability.
+
+A team that deploys often but breaks production constantly is not performing well.
+
+A team that is stable but can only release once every few months may also have a delivery problem.
+
+The useful signal comes from looking at the metrics together.
 
 ```mermaid
 flowchart LR
-  git[Git] --> collector[Collector]
-  ci[CI] --> collector
-  cd[CD] --> collector
+  speed[Delivery speed] --> dora[DORA metrics]
+  stability[Production stability] --> dora
+  dora --> insight[Delivery performance insight]
+```
+
+---
+
+## Metric details
+
+### Deployment Frequency
+
+Measures how often successful deployments reach production.
+
+Typical source:
+
+* deployment system
+* GitOps controller
+* CI/CD deployment records
+* release management tool
+
+Example:
+
+```text
+15 production deployments in the last 7 days
+```
+
+---
+
+### Lead Time for Changes
+
+Measures how long it takes for a code change to reach production.
+
+Typical source:
+
+* Git commit or pull request timestamp
+* deployment completion timestamp
+
+Example:
+
+```text
+commit created at 10:00
+deployment completed at 11:30
+lead time = 90 minutes
+```
+
+---
+
+### Change Failure Rate
+
+Measures how many deployments cause production failure.
+
+Typical source:
+
+* deployment records
+* incidents
+* rollbacks
+* hotfixes
+* failed health checks
+
+Example:
+
+```text
+10 deployments
+2 caused incidents
+change failure rate = 20%
+```
+
+---
+
+### Time to Restore Service
+
+Measures how long recovery takes after a failed change or incident.
+
+Typical source:
+
+* incident start timestamp
+* incident resolved timestamp
+* service health recovery timestamp
+
+Example:
+
+```text
+incident started at 14:05
+service restored at 14:40
+restore time = 35 minutes
+```
+
+---
+
+## Data sources
+
+DORA metrics usually require data from more than one system.
+
+```mermaid
+flowchart LR
+  git[Git commits and pull requests] --> collector[DORA collector]
+  ci[CI pipelines] --> collector
+  cd[Deployment system / Argo CD] --> collector
   incidents[Incident system] --> collector
   collector --> dashboard[Dashboard]
 ```
 
-The collector normalizes events into a shared model: changes, builds, deployments, incidents, and recovery events. The dashboard then calculates metrics per service, team, repository, or environment.
+Common sources:
 
-Only production deployments should normally count for DORA. Staging deployments are useful for debugging delivery flow, but they distort the delivery-performance signal if mixed with production data.
+| Source | Provides |
+| --- | --- |
+| GitHub / GitLab / Bitbucket | commits, pull requests, timestamps |
+| Jenkins / GitHub Actions / GitLab CI | build and pipeline data |
+| Argo CD / Flux / Spinnaker | deployment state and production revisions |
+| Jira / PagerDuty / Opsgenie | incidents and recovery data |
+| Prometheus / Grafana | visualization and operational context |
 
-## Implementation Options
+---
 
-| Option | Best fit | Notes |
+## Implementation options
+
+There is no single correct implementation. The right option depends on toolchain complexity.
+
+| Option | Best for | Notes |
 | --- | --- | --- |
-| GitLab built-in | Teams already using GitLab CI/CD and GitLab environments. | Lowest setup effort if deployments and incidents are already tracked in GitLab. |
-| Apache DevLake | Teams that want an open-source collector and Grafana dashboards across multiple tools. | Good fit when data comes from GitHub, GitLab, Jenkins, Jira, webhooks, or mixed CI/CD systems. |
-| Harness / LinearB / Swarmia | Teams that want a managed engineering metrics product. | Faster setup, less SQL ownership, usually paid and tied to product-specific definitions. |
-| Custom collector | Teams with unusual delivery systems or strict data ownership needs. | Keep it small: ingest events, normalize IDs, calculate the four metrics, publish to Grafana or BI. |
-| Manual / SQL approach | Early baseline, audit, or one-off analysis. | Useful to validate definitions before buying or building a platform; weak for ongoing reporting. |
+| GitLab built-in DORA metrics | Teams using GitLab for Git, CI and deployments | Simple when the whole lifecycle is inside GitLab |
+| Apache DevLake | Mixed toolchains | Collects data from multiple engineering tools and visualizes it in Grafana |
+| Harness / LinearB / Swarmia | Larger organizations | Commercial engineering intelligence platforms |
+| Custom collector | Focused internal use cases | Useful when the data model is simple and specific |
+| SQL / warehouse approach | Data-heavy organizations | Good when events already exist in BigQuery, Snowflake or PostgreSQL |
 
-## When DORA Works Well
+---
 
-- Services deploy independently and production deployment events are reliable.
-- Incidents are linked to services and have clear start and recovery timestamps.
-- Teams use the same definitions for production, deployment, incident, rollback, and hotfix.
-- Metrics are reviewed as trends, not as individual developer performance scores.
+## Example: GitHub + Argo CD + collector
 
-## When DORA Is Misleading
-
-- Deployments are batched across many unrelated services.
-- Production environments are not clearly separated from staging or test.
-- Incidents are underreported, merged together, or not linked to deployments.
-- Lead time starts at inconsistent points, such as first commit for one team and merge time for another.
-- Metrics are used as targets without context, which encourages gaming instead of improvement.
-
-## Example Architecture
-
-This example uses GitHub for source control, GitHub Actions for CI, Argo CD for deployment, and Prometheus/Grafana for operational visibility. DevLake can replace the custom collector if its built-in integrations fit the toolchain.
+A simple custom implementation can collect commit data from GitHub and deployment state from Argo CD.
 
 ```mermaid
 flowchart LR
-  pr[GitHub pull requests] --> collector[DORA collector or DevLake]
-  commits[GitHub commits] --> collector
-  actions[GitHub Actions] --> collector
-  argocd[Argo CD deployment state] --> collector
-  alerts[Prometheus alerts] --> collector
-  incidents[Incident system] --> collector
-  collector --> db[(Metrics database)]
-  db --> grafana[Grafana dashboard]
+  github[GitHub commit] --> collector[Custom DORA collector]
+  argocd[Argo CD Application status] --> collector
+  collector --> prometheus[Prometheus metrics]
+  prometheus --> grafana[Grafana dashboard]
 ```
 
-Minimum event model:
+This approach is useful for learning the model, but it is not a replacement for a complete production analytics platform.
 
-- Change: commit SHA, pull request ID, repository, author, merge time.
-- Deployment: service, environment, deployment time, version or commit SHA, status.
-- Incident: service, start time, recovery time, linked deployment or suspected deployment.
+---
 
-## Screenshots
+## Example: Apache DevLake
 
-These screenshots are copied from official GitLab and Apache DevLake documentation pages. Keep the source links beside the images so future updates can verify licensing and freshness.
+Apache DevLake is an open-source option for collecting engineering data from multiple tools and presenting DORA-style dashboards.
 
-### GitLab
-
-Source: [GitLab Value Streams Dashboard documentation](https://docs.gitlab.com/user/analytics/value_streams_dashboard/)
-
-![GitLab DORA performers score](../images/dora/gitlab-dora-performers-score.png)
-
-![GitLab projects DORA metrics](../images/dora/gitlab-projects-dora-metrics.png)
-
-### Apache DevLake
-
-Source: [Apache DevLake DORA documentation](https://devlake.apache.org/docs/DORA/)
+```mermaid
+flowchart LR
+  github[GitHub] --> devlake[Apache DevLake]
+  cicd[CI/CD tools] --> devlake
+  incidents[Incident tools] --> devlake
+  devlake --> db[(DevLake database)]
+  db --> grafana[Grafana]
+```
 
 ![Apache DevLake DORA dashboard](../images/dora/devlake-dora-dashboard.png)
 
-![Apache DevLake DORA metrics overview](../images/dora/devlake-dora-intro.png)
+Apache DevLake can be useful when the organization has multiple tools and needs one place to correlate Git, CI/CD, deployment and incident data.
+
+![Grafana delivery metrics example](../images/dora/devlake-grafana-example.png)
+
+Build and CI metrics are not the same as DORA metrics, but they are often displayed next to DORA dashboards to help explain delivery bottlenecks.
+
+---
+
+## When DORA works well
+
+DORA metrics work well when:
+
+* deployments are recorded consistently
+* production environments are clearly defined
+* incidents are tracked honestly
+* teams use the metrics for improvement
+* metrics are reviewed together, not in isolation
+
+Good use:
+
+```text
+Lead time increased. Let's inspect review time, pipeline time and deployment wait time.
+```
+
+Bad use:
+
+```text
+Team A has fewer deployments than Team B, so Team A is worse.
+```
+
+---
+
+## When DORA can be misleading
+
+DORA metrics can be misleading when:
+
+* deployment events are not reliable
+* incidents are not consistently recorded
+* different teams have very different release models
+* metrics are used to rank individuals
+* teams optimize the metric instead of the system
+
+Example problems:
+
+| Problem | Result |
+| --- | --- |
+| Counting staging deployments as production | Deployment frequency looks inflated |
+| Ignoring small incidents | Change failure rate looks better than reality |
+| Comparing unrelated teams | Metrics lose context |
+| Measuring only CI success | Production delivery is not measured |
+
+---
+
+## Practical guidance
+
+Start with the simplest reliable data source.
+
+If the organization uses GitLab for source control, CI and deployments, built-in GitLab DORA metrics may be enough.
+
+If the organization uses GitHub, Argo CD and a separate incident system, a collector or platform such as Apache DevLake may be more appropriate.
+
+If the organization already has a data warehouse, DORA metrics can be calculated there from existing events.
+
+The important part is not the tool. The important part is consistent event correlation:
+
+```text
+change created
+  -> deployment completed
+  -> failure detected
+  -> service restored
+```
+
+---
 
 ## References
 
-- [DORA software delivery performance metrics](https://dora.dev/guides/dora-metrics/)
-- [A history of DORA's software delivery metrics](https://dora.dev/insights/dora-metrics-history/)
-- [Four Keys project](https://github.com/dora-team/fourkeys)
-- [GitLab DORA metrics](https://docs.gitlab.com/user/analytics/dora_metrics/)
-- [GitLab Value Streams Dashboard](https://docs.gitlab.com/user/analytics/value_streams_dashboard/)
-- [Apache DevLake DORA](https://devlake.apache.org/docs/DORA/)
-- [Argo CD metrics](https://argo-cd.readthedocs.io/en/stable/operator-manual/metrics/)
-- [Swarmia: how PRs are linked to deployments](https://help.swarmia.com/track-dora-metrics/how-swarmia-links-prs-to-deployments)
-- [LinearB metrics glossary](https://linearb.helpdocs.io/article/sth7bn9zrd-metrics-glossary-html)
+* DORA research: https://dora.dev/
+* GitLab DORA metrics: https://docs.gitlab.com/user/analytics/dora_metrics/
+* Apache DevLake DORA metrics: https://devlake.apache.org/docs/DORA/
+* Apache DevLake: https://devlake.apache.org/
+* Argo CD metrics: https://argo-cd.readthedocs.io/en/stable/operator-manual/metrics/
+* GitHub deployments API: https://docs.github.com/en/rest/deployments/deployments
