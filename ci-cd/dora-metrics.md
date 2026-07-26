@@ -171,17 +171,7 @@ Delivery speed should not improve at the expense of reliability. A team that dep
 
 DORA reporting usually requires data from source control, CI/CD, deployment systems, production platforms, monitoring, and incident management.
 
-```mermaid
-flowchart TD
-  git[GitHub / GitLab] --> ci[CI/CD pipelines]
-  ci --> deploy[Argo CD / deployment system]
-  deploy --> prod[Kubernetes / production]
-  prod --> monitor[Monitoring and incident management]
-  monitor --> collector[DORA data collector]
-  deploy --> collector
-  git --> collector
-  collector --> dashboard[Grafana dashboard]
-```
+![DORA data flow](../images/dora/dora-flow.png)
 
 The exact tooling can vary. The important part is consistent event correlation: which change was deployed, when it reached production, whether it caused a failure, and when service recovered.
 
