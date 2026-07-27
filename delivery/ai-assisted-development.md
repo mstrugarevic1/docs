@@ -139,8 +139,6 @@ Use this compact loop for most AI-assisted changes:
 7. Review the final diff.
 8. Record useful durable context.
 
-For inherited or legacy applications, use the companion workflow in `legacy-application-development.md`.
-
 ## Prompt Examples
 
 Good prompts are specific about objective, scope, constraints, and validation.

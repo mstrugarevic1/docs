@@ -46,7 +46,6 @@ This repository contains documentation and small supporting documentation toolin
 * [AI-Assisted Development](delivery/ai-assisted-development.md) — A practical guide for using AI coding tools with repository context, scoped changes, validation, review, commit discipline, and secret handling.
 * [Cloud Migration Risk Register](delivery/cloud-migration-risk-register.md) — A compact risk register template for cloud and platform migration work, including impact, likelihood, owner, mitigation, and status.
 * [Incident Response Runbook](delivery/incident-response-runbook.md) — A practical incident workflow covering severity, roles, communication, investigation, mitigation, post-incident review, and readiness.
-* [Legacy Application Development](delivery/legacy-application-development.md) — A workflow for using AI agents on existing applications while preserving context, limiting scope, validating changes, and carrying work across sessions.
 * [Observability Checklist](delivery/observability-checklist.md) — A checklist for service logs, metrics, traces, alerts, dashboards, SLOs, and operational visibility during incidents.
 * [Production Readiness Checklist](delivery/production-readiness-checklist.md) — A service readiness checklist covering reliability, security, deployment, observability, scalability, data, and operational ownership.
 * [Project Delivery Playbook](delivery/project-delivery-playbook.md) — A senior-engineer playbook for project kickoff, alignment, planning, delivery tracking, communication, risks, and decisions.
