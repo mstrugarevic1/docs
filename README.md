@@ -16,6 +16,7 @@ This repository contains documentation and small supporting documentation toolin
 ### Kubernetes
 
 * [Argo Rollouts](kubernetes/argo-rollouts.md) — A conceptual guide to progressive delivery with Argo Rollouts, including Blue/Green, Canary, traffic routing, analysis, rollback behavior, and Argo CD responsibilities.
+* [EKS Common Production Problems](kubernetes/eks-common-production-problems.md) — A short recognition guide for common problems around EKS clusters, including control plane access, nodes, scheduling, networking, ingress, DNS, storage, IAM, add-ons, and workload configuration.
 * [Kubernetes CNI Comparison](kubernetes/kubernetes-cni-comparison.md) — A comparison of common Kubernetes networking plugins and managed-cloud defaults, including Cilium, Calico, Amazon VPC CNI, AKS, and GKE considerations.
 * [Kubernetes Internals](kubernetes/kubernetes-internals.md) — A practical walkthrough of Kubernetes internal workflows with diagrams for deployments, routing, rollouts, autoscaling, restarts, Vault injection, and GitOps.
 * [Kubernetes Migration Checklist](kubernetes/kubernetes-migration-checklist.md) — A concise checklist for moving workloads into or between Kubernetes clusters, covering assessment, manifests, data, traffic, validation, and cleanup.
