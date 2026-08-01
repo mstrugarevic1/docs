@@ -1,192 +1,84 @@
-# EKS Common Production Problems
-
-This document is a short recognition guide for common problems that occur in and around Amazon EKS clusters.
-
-It is not a troubleshooting guide, runbook, architecture recommendation, or disaster recovery plan. The goal is to help engineers quickly recognize the type of failure they may be looking at and the layer where it usually belongs.
-
-## Table of Contents
-
-- [1. Control Plane and API Access](#1-control-plane-and-api-access)
-- [2. Node and Capacity Problems](#2-node-and-capacity-problems)
-- [3. Pod Scheduling Problems](#3-pod-scheduling-problems)
-- [4. Networking and CNI Problems](#4-networking-and-cni-problems)
-- [5. Ingress and Load Balancer Problems](#5-ingress-and-load-balancer-problems)
-- [6. DNS and Service Discovery Problems](#6-dns-and-service-discovery-problems)
-- [7. Storage Problems](#7-storage-problems)
-- [8. IAM and Permission Problems](#8-iam-and-permission-problems)
-- [9. Add-on and Version Problems](#9-add-on-and-version-problems)
-- [10. Workload Configuration Problems](#10-workload-configuration-problems)
-- [11. Observability and Operational Blind Spots](#11-observability-and-operational-blind-spots)
-- [12. Key Takeaways](#12-key-takeaways)
-
-## 1. Control Plane and API Access
-
-EKS manages the Kubernetes control plane, but workloads still depend on API Server availability, authentication, authorization, admission control, and client connectivity.
-
-Common symptoms:
-
-- `kubectl` and controllers become slow or fail intermittently.
-- GitOps tools cannot apply manifests.
-- Autoscalers, operators, or admission webhooks stop reconciling.
-- New Pods, Services, or Ingress changes do not appear even though running workloads may continue.
-
-Typical layer:
-
-- EKS control plane, Kubernetes API access, IAM authentication, RBAC, admission webhooks, or network access to the API endpoint.
-
-## 2. Node and Capacity Problems
-
-Many production incidents are caused by worker node capacity rather than the managed control plane.
-
-Common symptoms:
-
-- Pods remain `Pending`.
-- Existing Pods are evicted or restarted during node pressure.
-- Deployments stall because new replicas cannot fit.
-- Cluster Autoscaler or Karpenter adds nodes too slowly, chooses unsuitable instance types, or cannot scale because of cloud limits.
-
-Typical layer:
-
-- EC2 capacity, Auto Scaling groups, managed node groups, Karpenter, instance quotas, subnet capacity, or workload resource requests.
-
-## 3. Pod Scheduling Problems
-
-Scheduling failures often look like an application outage even when the cluster itself is healthy.
-
-Common symptoms:
-
-- New replicas are not assigned to nodes.
-- Rollouts pause with old Pods still serving traffic.
-- Pods cannot run because of taints, tolerations, affinity, topology spread, missing resources, or Pod Disruption Budgets.
-- Critical workloads compete with batch or low-priority workloads.
-
-Typical layer:
-
-- Kubernetes scheduler, workload placement rules, resource requests, priority classes, and disruption policy.
-
-## 4. Networking and CNI Problems
-
-EKS commonly uses the Amazon VPC CNI, where Pods receive IP addresses from VPC subnets. This makes AWS network design part of cluster reliability.
-
-Common symptoms:
-
-- Pods cannot start because no Pod IP is available.
-- Some nodes run workloads while others cannot attach more Pod networking.
-- Pod-to-Pod or Pod-to-service traffic fails only in specific subnets or Availability Zones.
-- NetworkPolicy behavior differs from expectations because the selected CNI or add-on does not enforce the intended policy.
-
-Typical layer:
-
-- Amazon VPC CNI, ENI limits, subnet IP exhaustion, routing, security groups, NetworkPolicy implementation, or node networking.
-
-## 5. Ingress and Load Balancer Problems
-
-External traffic depends on AWS infrastructure, Kubernetes resources, and controllers agreeing on desired state.
-
-Common symptoms:
-
-- DNS resolves but users receive 404, 502, 503, or timeouts.
-- An Ingress exists but no load balancer is created.
-- Load balancer targets are unhealthy even though Pods are running.
-- TLS certificates, listener rules, or target groups do not match the intended application route.
-
-Typical layer:
-
-- AWS Load Balancer Controller, ALB/NLB configuration, Ingress rules, Services, EndpointSlices, Pod readiness, certificates, or DNS.
-
-## 6. DNS and Service Discovery Problems
-
-Kubernetes DNS issues can break applications even when Pods and Services are otherwise healthy.
-
-Common symptoms:
-
-- Applications fail to resolve internal service names.
-- Failures appear as intermittent connection errors, startup failures, or dependency timeouts.
-- CoreDNS becomes CPU constrained or overloaded during traffic spikes.
-- External DNS records point to stale or unexpected load balancer names.
-
-Typical layer:
-
-- CoreDNS, cluster DNS configuration, ExternalDNS, Route 53 records, Service names, or application resolver behavior.
-
-## 7. Storage Problems
-
-Storage failures often appear during rollout, rescheduling, node replacement, or zone disruption.
-
-Common symptoms:
-
-- Stateful Pods remain stuck because volumes cannot attach or mount.
-- A volume is bound in one Availability Zone while the Pod is scheduled in another.
-- Applications start but fail because filesystem permissions, mount paths, or storage classes differ from expectations.
-- EBS-backed workloads recover slower than stateless workloads after node loss.
-
-Typical layer:
-
-- EBS CSI driver, EFS CSI driver, StorageClass settings, PersistentVolumes, Availability Zone placement, attach limits, or application storage assumptions.
-
-## 8. IAM and Permission Problems
-
-EKS workloads commonly depend on AWS IAM through node roles, IRSA, or EKS Pod Identity. Permission failures can look like application bugs.
-
-Common symptoms:
-
-- Pods start successfully but cannot read S3, publish to SNS/SQS, fetch secrets, or call AWS APIs.
-- Controllers cannot create cloud resources such as load balancers, volumes, DNS records, or certificates.
-- Failures appear only after a service account, role, trust policy, or OIDC provider change.
-
-Typical layer:
-
-- IAM policies, trust relationships, service accounts, IRSA, EKS Pod Identity, controller permissions, or AWS service authorization.
-
-## 9. Add-on and Version Problems
-
-Managed add-ons reduce installation work, but they still have versions, compatibility rules, and operational behavior.
-
-Common symptoms:
-
-- CoreDNS, kube-proxy, VPC CNI, CSI drivers, or load balancer controllers behave differently after an upgrade.
-- A Kubernetes version upgrade exposes deprecated APIs or incompatible manifests.
-- One add-on is managed by EKS while another is managed by Helm or GitOps, causing ownership confusion.
-- System Pods are healthy but running versions that no longer match the cluster version.
-
-Typical layer:
-
-- EKS managed add-ons, Helm-managed add-ons, Kubernetes version skew, API deprecations, controller compatibility, or ownership boundaries.
-
-## 10. Workload Configuration Problems
-
-Some EKS incidents are ordinary Kubernetes workload problems with AWS-specific impact.
-
-Common symptoms:
-
-- Rolling updates send traffic to Pods before the application is ready.
-- Containers restart because memory limits are too low or startup probes are missing.
-- HPA does not scale as expected because metrics are missing or requests are unrealistic.
-- ConfigMap or Secret changes do not affect running Pods.
-
-Typical layer:
-
-- Deployment strategy, probes, resource requests and limits, autoscaling configuration, ConfigMaps, Secrets, and application startup behavior.
-
-## 11. Observability and Operational Blind Spots
-
-The hardest EKS problems are often not invisible; they are split across Kubernetes, AWS, and application telemetry.
-
-Common symptoms:
-
-- Kubernetes shows healthy Pods while the load balancer shows unhealthy targets.
-- AWS metrics show network or capacity pressure that is not visible in application dashboards.
-- Logs exist in several places but are not correlated by service, node, pod, request, or deployment.
-- Operators can see the symptom but not the failing layer.
-
-Typical layer:
-
-- Metrics, logs, traces, events, AWS service telemetry, alert design, ownership boundaries, and incident workflow.
-
-## 12. Key Takeaways
-
-- EKS manages the control plane, not the full production system.
-- Multi-AZ does not remove subnet, capacity, routing, storage, or application placement problems.
-- Managed add-ons still need version and ownership management.
-- Many EKS outages are caused by AWS dependencies around the cluster, not by Kubernetes alone.
-- The fastest way to classify an incident is to identify the failing layer: control plane, node, scheduler, CNI, ingress, DNS, storage, IAM, add-on, workload, or observability.
+# Common Amazon EKS Production Problems
+
+AWS manages the Amazon EKS control plane, but many production failures happen in customer-managed or customer-configured components: worker nodes, networking, add-ons, IAM, storage, workloads, ingress controllers, and external AWS services that the cluster depends on.
+
+## Common Problems from Official Documentation
+
+| Area | Common problem | What it may look like |
+|---|---|---|
+| Control plane | Kubernetes API latency or throttling can be caused by excessive controller, agent, or bootstrap requests. | Controllers slow down, nodes fail to join, or API clients receive throttling errors while existing Pods may keep running. |
+| Admission control | Admission webhooks can block API writes when they are unavailable, too broad, or configured to fail closed. | Deployments, updates, node changes, or system component writes hang or fail even though the API Server is reachable. |
+| Node bootstrap | Worker nodes can fail to join because of IAM, AMI, bootstrap, DNS, STS, route, subnet, or security group problems. | EC2 instances launch, but the cluster never gets usable Kubernetes nodes. |
+| EC2 capacity | The requested instance type or Availability Zone may not have enough capacity. | Managed node group upgrades, scale-outs, or Karpenter replacements cannot create the expected nodes. |
+| Karpenter | Karpenter can fail to launch or register replacement nodes because of launch template, IAM, CNI, or node initialization problems. | Pods remain unscheduled while replacement capacity exists only as failed or uninitialized EC2 attempts. |
+| Managed node groups | Managed node group resources or IAM instance profiles can be missing or unhealthy. | EKS reports node group health issues such as missing roles, missing instance profiles, failed launches, or failed node registration. |
+| Subnet capacity | Subnets can run out of addresses for nodes, Pods, or EKS-managed interfaces. | Pods fail to get IPs, nodes fail to launch, or cluster operations report insufficient free addresses. |
+| Pod density | ENI and per-instance Pod-density limits cap how many Pods a node can support. | Nodes have CPU and memory left but cannot accept more Pods that need VPC IPs. |
+| Prefix delegation | Prefix assignment can fail when the subnet lacks a contiguous `/28` IPv4 block. | Prefix mode is enabled, but new Pod address capacity is not available even when scattered free IPs remain. |
+| VPC CNI warm pools | VPC CNI warm ENI, IP, or prefix pools can reserve more subnet addresses than expected. | Subnets appear full before the number of running Pods explains the usage. |
+| Conntrack | Conntrack-table exhaustion or stale conntrack entries can break network flows or DNS traffic. | Services see intermittent timeouts, stale routing, or dropped connections from otherwise healthy Pods. |
+| CoreDNS | CoreDNS can be saturated, under-replicated, disrupted during scale-down, or affected by upstream DNS failures. | Applications report DNS timeouts, dependency connection failures, or intermittent service discovery errors. |
+| Node resources | Nodes can exhaust file descriptors, PIDs, disk, inodes, memory, or ephemeral storage. | Pods are evicted, nodes become `NotReady`, or containers fail despite application code being unchanged. |
+| Node upgrades | Managed node group upgrades can fail with `PodEvictionFailure`. | Old nodes remain in service because EKS cannot drain Pods during the upgrade window. |
+| Disruption policy | Pod Disruption Budgets can prevent voluntary node draining. | Upgrades, consolidation, or scale-down operations stall because eviction would violate availability policy. |
+| Kubernetes upgrades | Deprecated Kubernetes APIs can break workloads or controllers after a version upgrade. | Objects stop applying, controllers fail to reconcile, or an upgrade insight flags API usage that must move to a supported version. |
+| Add-ons | CoreDNS, VPC CNI, kube-proxy, CSI, or load balancer controller versions can be incompatible with the cluster or workload assumptions. | System Pods are running, but networking, DNS, storage, or ingress behavior changes after an add-on or cluster upgrade. |
+| IAM and identity | IRSA, EKS Pod Identity, OIDC, STS, or IAM trust-policy failures can prevent Pods or controllers from using AWS APIs. | Applications start but cannot access AWS services, or controllers cannot create cloud resources. |
+| Load balancing | ALB or NLB provisioning can fail because of IAM, annotations, target type, subnet discovery, or subnet IP constraints. | Ingress or Service objects exist, but the expected load balancer, listener, target group, or healthy targets do not appear. |
+| Image pulls | ECR authentication, permissions, endpoint, repository, or image tag problems can block image pulls. | Pods stay in image pull backoff states and deployments never reach the desired replica count. |
+| Storage | EBS volumes are bound to one Availability Zone. | A StatefulSet or rescheduled Pod cannot attach its volume after being placed in a different zone. |
+| Regional dependencies | Regional AWS degradation can leave existing Pods running while new nodes, load balancers, images, or deployments cannot be created. | The application partially serves traffic, but scaling, rollout, recovery, or provisioning paths fail. |
+
+## Public Engineering Reports
+
+| Company or report | Reported problem | Short lesson |
+|---|---|---|
+| Stytch | Managed node group cleanup removed an IAM instance profile that Karpenter depended on, so replacement nodes could not launch and services lost capacity. | EKS-managed resources and self-managed autoscaling must not share hidden IAM or instance-profile assumptions. |
+| Adevinta | An EKS migration exposed subnet and Pod IP exhaustion risk from Amazon VPC CNI address allocation. | VPC IP space is production capacity, not just network plumbing. |
+| Neon | AWS VPC CNI address allocation and warm pools contributed to subnet IP exhaustion during a production outage. | Allocated IPs can become the limiting factor before running Pods consume the expected number of addresses. |
+| Freshworks | CoreDNS Pods on a failed node and stale conntrack mappings caused intermittent DNS resolution failures in an EKS cluster. | DNS availability depends on CoreDNS placement, node health, kube-proxy behavior, and Linux conntrack state. |
+| Preply - General Kubernetes issue relevant to EKS | CoreDNS autoscaling and stale conntrack state caused a partial Kubernetes DNS outage. | DNS failures can be partial and service-specific when stale network state survives endpoint changes. |
+| EKS migration missing-packet report | During a migration to EKS, traffic from Pods to services outside the cluster failed intermittently because of AWS VPC CNI SNAT behavior. | EKS networking changes source-address behavior; external dependencies may observe different traffic than before migration. |
+| MIT xPRO - General Kubernetes issue relevant to EKS | Certificate renewal failed because Fastly and cert-manager both attempted to manage ACME DNS validation for related domains. | DNS and certificate ownership boundaries matter as much as the Kubernetes certificate object. |
+| Honeycomb | A Kafka migration to EKS carried operational and customer-impact risk because stateful systems need careful rollback, telemetry, and migration choreography. | Stateful workloads on EKS fail differently from stateless services; capacity, data movement, and customer communication are part of the risk. |
+
+## Summary
+
+Most EKS production problems fall into a small set of categories: capacity, networking and IP allocation, DNS, node resource exhaustion, IAM and identity, cluster add-ons, upgrades, ingress and load balancing, storage and Availability Zones, regional AWS dependencies, and stateful workloads.
+
+## References
+
+### Official Documentation
+
+- [Amazon EKS control plane scaling and API Priority and Fairness](https://docs.aws.amazon.com/eks/latest/best-practices/scale-control-plane.html)
+- [Amazon EKS control plane admission webhook guidance](https://docs.aws.amazon.com/eks/latest/best-practices/control-plane.html)
+- [Troubleshoot problems with Amazon EKS clusters and nodes](https://docs.aws.amazon.com/eks/latest/userguide/troubleshooting.html)
+- [Amazon EKS VPC CNI best practices](https://docs.aws.amazon.com/eks/latest/best-practices/vpc-cni.html)
+- [Amazon EKS IP address utilization guidance](https://docs.aws.amazon.com/eks/latest/best-practices/ip-opt.html)
+- [Amazon EKS prefix delegation requirements](https://docs.aws.amazon.com/eks/latest/userguide/cni-increase-ip-addresses-procedure.html)
+- [Amazon EKS CoreDNS management](https://docs.aws.amazon.com/eks/latest/userguide/managing-coredns.html)
+- [Amazon EKS CoreDNS autoscaling](https://docs.aws.amazon.com/eks/latest/userguide/coredns-autoscaling.html)
+- [Amazon EKS cluster services scaling guidance](https://docs.aws.amazon.com/eks/latest/best-practices/scale-cluster-services.html)
+- [Amazon EKS network performance monitoring](https://docs.aws.amazon.com/eks/latest/best-practices/monitoring_eks_workloads_for_network_performance_issues.html)
+- [Amazon EKS managed node update behavior](https://docs.aws.amazon.com/eks/latest/userguide/managed-node-update-behavior.html)
+- [Kubernetes disruptions and Pod Disruption Budgets](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/)
+- [Amazon EKS Kubernetes version lifecycle](https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html)
+- [Amazon EKS cluster upgrade guidance](https://docs.aws.amazon.com/eks/latest/userguide/update-cluster.html)
+- [Amazon EKS add-ons](https://docs.aws.amazon.com/eks/latest/userguide/eks-add-ons.html)
+- [Amazon EKS IAM and workload identity guidance](https://docs.aws.amazon.com/eks/latest/best-practices/identity-and-access-management.html)
+- [AWS Load Balancer Controller for Amazon EKS](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html)
+- [AWS Load Balancer Controller subnet discovery](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.2/deploy/subnet_discovery/)
+- [Amazon EKS and ECR image pull troubleshooting](https://repost.aws/knowledge-center/eks-ecr-troubleshooting)
+- [Amazon EBS volume Availability Zone constraint](https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volumes.html)
+- [Amazon EKS pod behavior during control plane network disconnections](https://docs.aws.amazon.com/eks/latest/best-practices/hybrid-nodes-kubernetes-pod-failover.html)
+
+### Engineering Reports and Postmortems
+
+- [Stytch postmortem: managed node group cleanup and Karpenter instance profile failure](https://stytch.com/blog/stytch-postmortem-2023-02-23/)
+- [Adevinta: avoiding an outage caused by running out of IPs in EKS](https://adevinta.com/techblog/how-we-avoided-an-outage-caused-by-running-out-of-ips-in-eks/)
+- [Neon: AWS CNI lessons from a production outage](https://neon.com/blog/aws-cni-lessons-from-a-production-outage)
+- [Freshworks: decoding CoreDNS failures](https://medium.com/freshworks-engineering-blog/decoding-coredns-failures-75ebdc89ac0b)
+- [Preply: DNS postmortem](https://medium.com/preply-engineering/dns-postmortem-e169efd45afd)
+- [The case of the missing packet: an EKS migration tale](https://yashmehrotra.com/posts/the-case-of-the-missing-packet-an-eks-migration-tale/)
+- [MIT xPRO outage: ACME DNS ownership conflict](https://engineering.ol.mit.edu/runbooks_post_mortems/20260603_xpro_outage/)
+- [Honeycomb: transforming how they run Kafka at Honeycomb](https://www.honeycomb.io/blog/transforming-how-we-run-kafka-honeycomb)
