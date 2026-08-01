@@ -2,7 +2,16 @@
 
 AWS manages the Amazon EKS control plane, but many production failures happen in customer-managed or customer-configured components: worker nodes, networking, add-ons, IAM, storage, workloads, ingress controllers, and external AWS services that the cluster depends on.
 
-## Common Problems from Official Documentation
+## Table of Contents
+
+- [Common EKS Failure Patterns from Official Guidance](#common-eks-failure-patterns-from-official-guidance)
+- [Production Incidents from Public Engineering Reports](#production-incidents-from-public-engineering-reports)
+- [Recurring Failure Themes](#recurring-failure-themes)
+- [References](#references)
+
+## Common EKS Failure Patterns from Official Guidance
+
+The following table summarizes recurring EKS failure patterns described across AWS and Kubernetes guidance. It is intended as a recognition catalog rather than a troubleshooting guide: each row identifies a problem that engineers may encounter and the production symptoms it can produce.
 
 | Area | Common problem | What it may look like |
 |---|---|---|
@@ -29,7 +38,9 @@ AWS manages the Amazon EKS control plane, but many production failures happen in
 | Storage | EBS volumes are bound to one Availability Zone. | A StatefulSet or rescheduled Pod cannot attach its volume after being placed in a different zone. |
 | Regional dependencies | Regional AWS degradation can leave existing Pods running while new nodes, load balancers, images, or deployments cannot be created. | The application partially serves traffic, but scaling, rollout, recovery, or provisioning paths fail. |
 
-## Public Engineering Reports
+## Production Incidents from Public Engineering Reports
+
+Official documentation describes expected failure modes, while public engineering reports show how similar problems appeared in real systems. These cases are intentionally summarized to the reported failure and one reusable lesson rather than presenting complete incident timelines or root-cause analyses.
 
 | Company or report | Reported problem | Short lesson |
 |---|---|---|
@@ -42,35 +53,17 @@ AWS manages the Amazon EKS control plane, but many production failures happen in
 | MIT xPRO - General Kubernetes issue relevant to EKS | Certificate renewal failed because Fastly and cert-manager both attempted to manage ACME DNS validation for related domains. | DNS and certificate ownership boundaries matter as much as the Kubernetes certificate object. |
 | Honeycomb | A Kafka migration to EKS carried operational and customer-impact risk because stateful systems need careful rollback, telemetry, and migration choreography. | Stateful workloads on EKS fail differently from stateless services; capacity, data movement, and customer communication are part of the risk. |
 
-## Summary
+## Recurring Failure Themes
 
-Most EKS production problems fall into a small set of categories: capacity, networking and IP allocation, DNS, node resource exhaustion, IAM and identity, cluster add-ons, upgrades, ingress and load balancing, storage and Availability Zones, regional AWS dependencies, and stateful workloads.
+Across official guidance and public incident reports, the same themes recur: limited capacity, IP allocation, DNS and conntrack behavior, node resource exhaustion, IAM dependencies, add-on compatibility, upgrades, load balancing, Availability Zone constraints, regional AWS dependencies, and the operational complexity of stateful workloads.
 
 ## References
 
 ### Official Documentation
 
-- [Amazon EKS control plane scaling and API Priority and Fairness](https://docs.aws.amazon.com/eks/latest/best-practices/scale-control-plane.html)
-- [Amazon EKS control plane admission webhook guidance](https://docs.aws.amazon.com/eks/latest/best-practices/control-plane.html)
-- [Troubleshoot problems with Amazon EKS clusters and nodes](https://docs.aws.amazon.com/eks/latest/userguide/troubleshooting.html)
-- [Amazon EKS VPC CNI best practices](https://docs.aws.amazon.com/eks/latest/best-practices/vpc-cni.html)
-- [Amazon EKS IP address utilization guidance](https://docs.aws.amazon.com/eks/latest/best-practices/ip-opt.html)
-- [Amazon EKS prefix delegation requirements](https://docs.aws.amazon.com/eks/latest/userguide/cni-increase-ip-addresses-procedure.html)
-- [Amazon EKS CoreDNS management](https://docs.aws.amazon.com/eks/latest/userguide/managing-coredns.html)
-- [Amazon EKS CoreDNS autoscaling](https://docs.aws.amazon.com/eks/latest/userguide/coredns-autoscaling.html)
-- [Amazon EKS cluster services scaling guidance](https://docs.aws.amazon.com/eks/latest/best-practices/scale-cluster-services.html)
-- [Amazon EKS network performance monitoring](https://docs.aws.amazon.com/eks/latest/best-practices/monitoring_eks_workloads_for_network_performance_issues.html)
-- [Amazon EKS managed node update behavior](https://docs.aws.amazon.com/eks/latest/userguide/managed-node-update-behavior.html)
-- [Kubernetes disruptions and Pod Disruption Budgets](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/)
-- [Amazon EKS Kubernetes version lifecycle](https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html)
-- [Amazon EKS cluster upgrade guidance](https://docs.aws.amazon.com/eks/latest/userguide/update-cluster.html)
-- [Amazon EKS add-ons](https://docs.aws.amazon.com/eks/latest/userguide/eks-add-ons.html)
-- [Amazon EKS IAM and workload identity guidance](https://docs.aws.amazon.com/eks/latest/best-practices/identity-and-access-management.html)
-- [AWS Load Balancer Controller for Amazon EKS](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html)
-- [AWS Load Balancer Controller subnet discovery](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.2/deploy/subnet_discovery/)
-- [Amazon EKS and ECR image pull troubleshooting](https://repost.aws/knowledge-center/eks-ecr-troubleshooting)
-- [Amazon EBS volume Availability Zone constraint](https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volumes.html)
-- [Amazon EKS pod behavior during control plane network disconnections](https://docs.aws.amazon.com/eks/latest/best-practices/hybrid-nodes-kubernetes-pod-failover.html)
+- [Amazon EKS User Guide](https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html)
+- [Amazon EKS Best Practices Guide](https://docs.aws.amazon.com/eks/latest/best-practices/introduction.html)
+- [Kubernetes Documentation](https://kubernetes.io/docs/home/)
 
 ### Engineering Reports and Postmortems
 
