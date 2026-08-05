@@ -6,19 +6,19 @@ This is not a complete implementation guide or legal advice. Timelines are plann
 
 ---
 
-## 1. What are SOC 2 and ISO 27001?
+## 1. What are SOC 2 and ISO/IEC 27001?
 
 | Framework                   | What it is                                                                                                                        | Main use                                                                                                                     |
 | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| **SOC 2**                   | An independent auditor's report describing whether company controls are properly designed and, for Type II, operating effectively | Commonly requested by US customers, SaaS companies, enterprise procurement and vendor-security teams                         |
-| **ISO/IEC 27001**           | An international standard for establishing and operating an Information Security Management System, or ISMS                       | Commonly requested by international and enterprise customers and organizations that want a formal security-management system |
-| **SOC 2 Type I**            | Evaluates control design at a specific point in time                                                                              | Useful as an initial milestone                                                                                               |
-| **SOC 2 Type II**           | Evaluates control design and operation over an observation period                                                                 | Usually more valuable to enterprise customers                                                                                |
-| **ISO 27001 certification** | External certification that the organization's ISMS meets ISO/IEC 27001 requirements                                              | Produces a certificate, subject to continued surveillance and recertification                                                |
+| **SOC 2**                   | An independent auditor's report describing whether company controls are properly designed and, for Type 2, operating effectively | Commonly requested by US customers, SaaS companies, enterprise procurement and vendor-security teams                         |
+| **ISO/IEC 27001:2022**      | An international standard for establishing and operating an Information Security Management System, or ISMS                      | Commonly requested by international and enterprise customers and organizations that want a formal security-management system |
+| **SOC 2 Type 1**            | Evaluates control design at a specific point in time                                                                             | Useful as an initial milestone                                                                                               |
+| **SOC 2 Type 2**            | Evaluates control design and operating effectiveness over an observation period                                                  | Usually more valuable to enterprise customers                                                                                |
+| **ISO/IEC 27001:2022 certification** | Independent certification that the organization's ISMS meets the standard's requirements                              | Produces a certificate, subject to continued surveillance and recertification                                                |
 
 SOC 2 is not technically a certification. The result is a restricted-use audit report.
 
-ISO does not certify companies directly. Certification is performed by an external certification body.
+ISO does not certify companies directly. An organization may choose certification, which is performed by an independent certification body.
 
 ---
 
@@ -42,9 +42,9 @@ These frameworks do not prove that a company is impossible to breach. They demon
 
 | Company situation                                            | Typical choice                  |
 | ------------------------------------------------------------ | ------------------------------- |
-| US-focused SaaS selling to enterprise customers              | SOC 2 Type II                   |
+| US-focused SaaS selling to enterprise customers              | SOC 2 Type 2                    |
 | International company or customers explicitly requesting ISO | ISO/IEC 27001                   |
-| Early-stage company needing a faster initial milestone       | SOC 2 Type I                    |
+| Early-stage company needing a faster initial milestone       | SOC 2 Type 1                    |
 | Company selling internationally and to US enterprises        | Both                            |
 | Customer explicitly requires one framework                   | Follow the customer requirement |
 
@@ -60,12 +60,12 @@ There is no guaranteed duration.
 
 | Target                               | Company with a reasonable security baseline | Company starting from weak or undocumented controls |
 | ------------------------------------ | ------------------------------------------: | --------------------------------------------------: |
-| SOC 2 Type I                         |                                  2–4 months |                                          4–8 months |
-| SOC 2 Type II                        |                                  5–9 months |                                         9–15 months |
+| SOC 2 Type 1                         |                                  2–4 months |                                          4–8 months |
+| SOC 2 Type 2                         |                                  5–9 months |                                         9–15 months |
 | ISO/IEC 27001                        |                                  4–8 months |                                         8–15 months |
-| SOC 2 Type II and ISO 27001 together |                                 6–10 months |                                        10–18 months |
+| SOC 2 Type 2 and ISO 27001 together  |                                 6–10 months |                                        10–18 months |
 
-These estimates include preparation, remediation, evidence collection and the external audit.
+These are planning estimates, not framework requirements. They include preparation, remediation, evidence collection and the external audit.
 
 They may increase because of:
 
@@ -94,11 +94,13 @@ They may increase because of:
 | 6. Technical remediation     |          4–12 weeks | Implement IAM, logging, CI/CD, backup, vulnerability and monitoring controls | Working technical controls               |
 | 7. Process operation         |          1–6 months | Perform reviews, tests, approvals and recurring activities                   | Evidence showing controls operate        |
 | 8. Readiness review          |           1–3 weeks | Check controls and evidence before external audit                            | Readiness report and remaining actions   |
-| 9. External audit            |           2–8 weeks | Auditor tests documentation, controls and evidence                           | SOC 2 report or ISO audit findings       |
+| 9. External assessment       |           2–8 weeks | CPA firm or certification body tests documentation, controls and evidence    | SOC 2 report or ISO certification result |
 | 10. Remediation              | Depends on findings | Correct audit findings                                                       | Accepted corrective actions              |
 | 11. Continuous operation     |             Ongoing | Continue controls, reviews and evidence collection                           | Continued compliance and audit readiness |
 
 Several phases normally run in parallel.
+
+Practical sequence: `scope -> risks -> controls -> owners -> implementation -> evidence -> audit -> remediation`
 
 ---
 
@@ -106,10 +108,10 @@ Several phases normally run in parallel.
 
 ### Step 1: Select the report type
 
-* Use **Type I** to evaluate control design at one date.
-* Use **Type II** when customers expect evidence that controls operated consistently over time.
+* Use **Type 1** to evaluate control design at one date.
+* Use **Type 2** to evaluate both control design and operating effectiveness over a defined period.
 
-Most mature enterprise customers prefer Type II.
+Most mature enterprise customers prefer Type 2.
 
 ### Step 2: Select applicable Trust Services Criteria
 
@@ -140,7 +142,7 @@ Examples:
 
 ### Step 4: Operate controls
 
-Type II requires evidence that controls operated during the selected audit period.
+Type 2 requires evidence that controls operated effectively during the selected audit period.
 
 Examples:
 
@@ -158,9 +160,9 @@ A licensed and qualified CPA firm performs the SOC 2 examination and issues the 
 
 ---
 
-## 7. ISO/IEC 27001 roadmap
+## 7. ISO/IEC 27001:2022 roadmap
 
-ISO 27001 focuses on establishing and continually improving an ISMS.
+ISO/IEC 27001:2022 focuses on establishing and continually improving an ISMS.
 
 ### Required management-system elements
 
@@ -183,12 +185,11 @@ The organization needs to establish:
 
 The Statement of Applicability records:
 
-* Which controls apply
-* Which controls do not apply
-* Why controls were included or excluded
-* How applicable controls are implemented
+* The organization's necessary controls and why they were selected
+* Whether those controls are implemented
+* Which Annex A controls were excluded and why
 
-It should reflect actual risks and company operations, not a copied template.
+Annex A is a reference set used to check that necessary controls were not missed, not a mandatory checklist. Control selection is based on the ISMS scope, assessed risks and applicable business, contractual, legal or regulatory requirements; necessary controls may also come from other sources. The Statement of Applicability should reflect those decisions and actual operations, not a copied template.
 
 ### Certification audit
 
@@ -213,7 +214,7 @@ Example:
 * Application engineers
 * HR or Operations
 * External compliance consultant
-* External auditor
+* External assessor
 
 | Area                                | Primary owner                            | Supporting roles                |
 | ----------------------------------- | ---------------------------------------- | ------------------------------- |
@@ -235,7 +236,7 @@ Example:
 | Policies                            | Relevant process owner                   | CTO and consultant              |
 | Evidence collection                 | Each control owner                       | Compliance coordinator          |
 | Internal readiness review           | Consultant or independent reviewer       | All control owners              |
-| External assessment                 | Independent auditor                      | Entire company                  |
+| External assessment                 | CPA firm or certification body           | Entire company                  |
 
 In a small company, one person may hold several roles, but ownership must still be explicit.
 
@@ -259,7 +260,7 @@ DevOps should not silently become the owner of HR, Legal, vendor risk, policies 
 | Procurement / Vendor Risk | Vendor assessment, contracts and recurring vendor reviews                                 |
 | Business Continuity       | Business impact analysis, recovery planning and exercises                                 |
 | Internal Audit            | Independent review of the ISMS and controls                                               |
-| External auditor          | Independent SOC 2 examination or ISO certification audit                                  |
+| External assessor         | CPA firm for the SOC 2 examination or certification body for the ISO certification audit   |
 
 ---
 
@@ -304,6 +305,8 @@ DevOps may support but should not solely own:
 
 Before audit readiness, the company should normally have:
 
+This is a common cloud/SaaS technical baseline, not a universal SOC 2 or ISO/IEC 27001:2022 checklist. The required controls depend on scope, risks and applicable requirements.
+
 | Area             | Expected baseline                                             |
 | ---------------- | ------------------------------------------------------------- |
 | Identity         | SSO, MFA, least privilege and controlled administrator access |
@@ -341,6 +344,11 @@ Before audit readiness, the company should normally have:
 
 Screenshots should be a last resort. Prefer durable system records, tickets, logs and exported reports.
 
+Two concise worked examples:
+
+* **Employee offboarding:** Risk: a departing employee retains access. Control: access is removed promptly after termination. Implementation: HR triggers an offboarding workflow that disables SSO and connected accounts. Evidence: the HR request and identity-provider disable logs. Owner: HR / Operations, supported by IT or DevOps for technical access.
+* **Production access:** Risk: unauthorized or excessive privileged access. Control: production access requires approval, least privilege and periodic review. Implementation: grant role-based, MFA-protected access through the identity system. Evidence: approval records, role assignments and completed access reviews. Owner: DevOps / Platform.
+
 ---
 
 ## 13. Common reasons projects fail
@@ -373,7 +381,7 @@ For a smaller engineering company:
 7. Automate technical evidence where practical.
 8. Run controls consistently before the audit.
 9. Perform an independent readiness review.
-10. Engage the external auditor only when major gaps are resolved.
+10. Engage the CPA firm or certification body only when major gaps are resolved.
 
 The goal is not to produce documents for an auditor.
 
