@@ -23,7 +23,7 @@ This repository contains documentation and small supporting documentation toolin
 * [Kubernetes Multi-Site DR](kubernetes/kubernetes-multi-site-dr.md) — An active-active multi-Region DR design on AWS with two EKS clusters, Argo CD GitOps, DynamoDB Global Tables, and global traffic routing.
 * [Kubernetes Resource Sizing](kubernetes/kubernetes-resource-sizing.md) — A guide to sizing Kubernetes workload CPU and memory requests using VPA and Goldilocks recommendations.
 * [Rancher 1.6 to AWS EKS Migration](kubernetes/rancher-1-6-to-aws-eks-migration.md) — A practical playbook for converting Rancher 1.6 Cattle stacks into Kubernetes resources on EKS.
-* [FluxCD and Argo CD GitOps Basics](kubernetes/fluxcd-argocd-gitops.md) — A practical comparison of FluxCD and Argo CD, including GitOps fundamentals, reconciliation, Helm, Kustomize, drift correction, and troubleshooting.
+* [FluxCD, Argo CD, and Rancher Fleet GitOps Basics](kubernetes/fluxcd-argocd-fleet-gitops.md) — A practical comparison of FluxCD, Argo CD, and Rancher Fleet, including GitOps fundamentals, reconciliation, Helm, Kustomize, drift correction, and troubleshooting.
 
 ### Terraform
 

@@ -1,25 +1,26 @@
-# FluxCD and Argo CD GitOps Basics
+# FluxCD, Argo CD, and Rancher Fleet GitOps Basics
 
-This document explains what FluxCD and Argo CD are, why teams use them, and how to deploy a simple demo application with each tool.
+This document explains what FluxCD, Argo CD, and Rancher Fleet are, why teams use them, and how to deploy a simple demo application with each tool.
 
 The examples are intentionally small. They are for learning, local clusters, and basic platform discussions. They are not a production GitOps platform design.
 
 ## Table of Contents
 
 - [1. What GitOps Means](#1-what-gitops-means)
-- [2. Why Use FluxCD or Argo CD](#2-why-use-fluxcd-or-argo-cd)
-- [3. FluxCD and Argo CD at a Glance](#3-fluxcd-and-argo-cd-at-a-glance)
+- [2. Why Use a GitOps Controller](#2-why-use-a-gitops-controller)
+- [3. FluxCD, Argo CD, and Fleet at a Glance](#3-fluxcd-argo-cd-and-fleet-at-a-glance)
 - [4. Basic Repository Layout](#4-basic-repository-layout)
 - [5. Demo Application Manifests](#5-demo-application-manifests)
 - [6. Deploying the Demo App with FluxCD](#6-deploying-the-demo-app-with-fluxcd)
 - [7. Deploying the Demo App with Argo CD](#7-deploying-the-demo-app-with-argo-cd)
-- [8. Helm Examples](#8-helm-examples)
-- [9. Day-to-Day Usage](#9-day-to-day-usage)
-- [10. Drift Correction](#10-drift-correction)
-- [11. Common Troubleshooting Commands](#11-common-troubleshooting-commands)
-- [12. When to Use Which](#12-when-to-use-which)
-- [13. Practical Recommendations](#13-practical-recommendations)
-- [14. References](#14-references)
+- [8. Deploying the Demo App with Fleet](#8-deploying-the-demo-app-with-fleet)
+- [9. Helm Examples](#9-helm-examples)
+- [10. Day-to-Day Usage](#10-day-to-day-usage)
+- [11. Drift Correction](#11-drift-correction)
+- [12. Common Troubleshooting Commands](#12-common-troubleshooting-commands)
+- [13. When to Use Which](#13-when-to-use-which)
+- [14. Practical Recommendations](#14-practical-recommendations)
+- [15. References](#15-references)
 
 ## 1. What GitOps Means
 
@@ -47,7 +48,7 @@ CI pipeline
 Update image tag in GitOps repository
     |
     v
-FluxCD or Argo CD reconciles the cluster
+FluxCD, Argo CD, or Fleet reconciles the cluster
 ```
 
 Git becomes the operational source of truth:
@@ -58,7 +59,7 @@ Git becomes the operational source of truth:
 - Which Helm chart or Kustomize overlay should be applied
 - Who changed the desired state and when
 
-## 2. Why Use FluxCD or Argo CD
+## 2. Why Use a GitOps Controller
 
 Without GitOps, many teams deploy directly from CI pipelines using broad cluster credentials. That works for small setups, but it becomes harder to audit and recover.
 
@@ -81,18 +82,18 @@ GitOps:
 Watch Git -> Apply manifests -> Keep cluster in sync
 ```
 
-## 3. FluxCD and Argo CD at a Glance
+## 3. FluxCD, Argo CD, and Fleet at a Glance
 
-| Area | FluxCD | Argo CD |
-|---|---|---|
-| Main model | Modular Kubernetes controllers | Application-centric GitOps |
-| Primary resource | `Kustomization`, `HelmRelease` | `Application` |
-| User interface | CLI and ecosystem UIs | Strong built-in web UI |
-| Configuration style | Multiple specialized CRDs | Central `Application` resource |
-| Helm support | `HelmRelease` controller | Native Helm source support |
-| Best fit | Kubernetes-native and automation-heavy workflows | Teams wanting application visualization and centralized UI |
+| Area | FluxCD | Argo CD | Rancher Fleet |
+|---|---|---|---|
+| Main model | Modular Kubernetes controllers | Application-centric GitOps | `GitRepo` -> `Bundle` -> `BundleDeployment` |
+| Primary resource | `Kustomization`, `HelmRelease` | `Application` | `GitRepo` |
+| User interface | CLI and ecosystem UIs | Strong built-in web UI | Kubernetes CRDs and `kubectl`, with Rancher UI integration when used with Rancher |
+| Configuration style | Multiple specialized CRDs | Central `Application` resource | Repository paths become Bundles targeted to clusters |
+| Helm support | `HelmRelease` controller | Native Helm source support | Helm charts and Helm options through `fleet.yaml` |
+| Best fit | Kubernetes-native and automation-heavy workflows | Teams wanting application visualization and centralized UI | Rancher environments and centralized multi-cluster deployments; single-cluster mode is also supported |
 
-Both tools use a pull-based model, continuously reconcile desired and actual state, support Helm and Kustomize, detect configuration drift, can automatically prune removed resources, and can manage multiple clusters.
+All three tools use a pull-based model, reconcile desired and actual state, support Helm and Kustomize, detect configuration drift, and can manage multiple clusters. Their exact pruning and drift-correction controls differ.
 
 High-level difference:
 
@@ -102,9 +103,12 @@ FluxCD:
 
 Argo CD:
 `Application` -> points to repo/path/chart -> applied by Argo CD
+
+Fleet:
+`GitRepo` -> `Bundle` -> `BundleDeployment` -> target cluster
 ```
 
-The final choice depends on team workflow and operational preferences. Neither tool is universally better.
+The final choice depends on team workflow and operational preferences. No single tool is universally better.
 
 ## 4. Basic Repository Layout
 
@@ -123,7 +127,9 @@ gitops-repo/
     └── local/
         ├── flux/
         │   └── dummy-app.yaml
-        └── argocd/
+        ├── argocd/
+        │   └── dummy-app.yaml
+        └── fleet/
             └── dummy-app.yaml
 ```
 
@@ -132,9 +138,10 @@ Meaning:
 - `apps/dummy-app` contains the application manifests.
 - `clusters/local/flux` contains Flux reconciliation resources.
 - `clusters/local/argocd` contains Argo CD `Application` resources.
+- `clusters/local/fleet` contains Fleet `GitRepo` resources.
 - More clusters can be added later as `clusters/dev`, `clusters/staging`, or `clusters/prod`.
 
-> **Important:** The FluxCD and Argo CD examples are alternative ways to deploy the same application. Do not configure both controllers to reconcile the same Kubernetes resources.
+> **Important:** FluxCD, Argo CD, and Fleet are alternative controllers in this demo. Install or configure only one to manage `apps/dummy-app`; never let multiple GitOps controllers reconcile the same Kubernetes resources.
 
 For a demo, one repository is enough. For production, teams often separate application source code from deployment configuration.
 
@@ -209,9 +216,9 @@ Validate before committing:
 kubectl kustomize apps/dummy-app
 ```
 
-Commit and push these files before pointing FluxCD or Argo CD at the path.
+Commit and push these files before pointing FluxCD, Argo CD, or Fleet at the path.
 
-Both Argo CD and Kubernetes can create namespaces in other ways, but this example keeps the namespace definition in Git together with the application manifests.
+The controllers and Kubernetes can create namespaces in other ways, but this example keeps the namespace definition in Git together with the application manifests.
 
 ## 6. Deploying the Demo App with FluxCD
 
@@ -233,7 +240,7 @@ flux bootstrap github \
   --personal
 ```
 
-Flux processes resources under its configured reconciliation path. An Argo CD `Application` resource should not be located under the Flux-managed path. Without the Argo CD CRD, Flux reconciliation could fail. With Argo CD installed, both controllers could accidentally manage the same application.
+Flux processes resources under its configured reconciliation path. Argo CD `Application` and Fleet `GitRepo` resources should not be located under the Flux-managed path. Without their CRDs, Flux reconciliation could fail. If the other controllers are installed, they could accidentally manage the same application.
 
 After bootstrap, Flux creates a `GitRepository` named `flux-system` in the `flux-system` namespace. Add a Flux `Kustomization` custom resource that points to the app path.
 
@@ -357,9 +364,82 @@ argocd app logs dummy-app
 
 The UI shows sync status, health status, Kubernetes resources, events, and diffs between Git and the cluster.
 
-## 8. Helm Examples
+## 8. Deploying the Demo App with Fleet
 
-Both tools can deploy Helm charts. Keep the first demo simple with Kustomize, then add Helm when the team understands the reconciliation model.
+Fleet can run standalone without Rancher. For this local demo, install its CRDs and controller into the cluster with the official Fleet Helm charts:
+
+```bash
+helm repo add fleet https://rancher.github.io/fleet-helm-charts/
+helm repo update fleet
+
+helm -n cattle-fleet-system install --create-namespace --wait fleet-crd \
+  fleet/fleet-crd
+helm -n cattle-fleet-system install --create-namespace --wait fleet \
+  fleet/fleet
+```
+
+Verify the installation and the local cluster registration:
+
+```bash
+kubectl -n cattle-fleet-system get pods
+kubectl -n fleet-local get clusters.fleet.cattle.io
+```
+
+Fleet starts from a `GitRepo` resource. In standalone single-cluster mode, the `fleet-local` namespace is wired to the cluster where Fleet is installed.
+
+Replace the example repository URL with your own GitOps repository.
+
+`clusters/local/fleet/dummy-app.yaml`:
+
+```yaml
+apiVersion: fleet.cattle.io/v1alpha1
+kind: GitRepo
+metadata:
+  name: dummy-app
+  namespace: fleet-local
+spec:
+  repo: https://github.com/example/gitops-repo.git
+  branch: main
+  paths:
+    - apps/dummy-app
+```
+
+Apply the resource:
+
+```bash
+kubectl apply -f clusters/local/fleet/dummy-app.yaml
+```
+
+Fleet detects the `kustomization.yaml` in `apps/dummy-app`, renders that path with Kustomize, and follows this lifecycle:
+
+```text
+GitRepo -> Bundle -> BundleDeployment -> target cluster
+```
+
+The `GitRepo` watches Git. Fleet normally creates a `Bundle` automatically for each configured path, then creates a `BundleDeployment` for each target cluster. Do not create `Bundle` or `BundleDeployment` resources manually for this demo.
+
+Check repository reconciliation, generated resources, and the workload:
+
+```bash
+kubectl -n fleet-local get gitrepos.fleet.cattle.io
+kubectl -n fleet-local describe gitrepo.fleet.cattle.io dummy-app
+kubectl -n fleet-local get bundles.fleet.cattle.io
+kubectl get bundledeployments.fleet.cattle.io -A
+kubectl -n dummy-app get deploy,svc,pods
+```
+
+Fleet polls the repository automatically. To force a redeployment during testing, increment `spec.forceSyncGeneration`:
+
+```bash
+kubectl -n fleet-local patch gitrepo.fleet.cattle.io dummy-app \
+  --type merge -p '{"spec":{"forceSyncGeneration":1}}'
+```
+
+For a private repository, reference a Kubernetes secret from the `GitRepo`; do not put credentials in the manifest.
+
+## 9. Helm Examples
+
+All three tools can deploy Helm charts. Keep the first demo simple with Kustomize, then add Helm when the team understands the reconciliation model.
 
 FluxCD Helm flow:
 
@@ -412,14 +492,28 @@ source:
 
 Argo CD renders the chart and applies the resulting Kubernetes resources.
 
-## 9. Day-to-Day Usage
+Fleet discovers a chart in a watched Git path when that path contains `Chart.yaml`. It can also fetch an external chart when the path contains a `fleet.yaml` such as:
+
+```yaml
+defaultNamespace: podinfo
+helm:
+  repo: https://stefanprodan.github.io/podinfo
+  chart: podinfo
+  version: "6.x"
+  values:
+    replicaCount: 2
+```
+
+Point a Fleet `GitRepo` path at the directory containing this `fleet.yaml`. Fleet creates and deploys the Bundle automatically.
+
+## 10. Day-to-Day Usage
 
 Normal change flow:
 
 1. Update Kubernetes YAML, Kustomize, or Helm values in Git.
 2. Open a pull request.
 3. Review and merge.
-4. FluxCD or Argo CD detects the change.
+4. FluxCD, Argo CD, or Fleet detects the change.
 5. The cluster reconciles to the new desired state.
 6. Verify pod health, service behavior, logs, and metrics.
 
@@ -439,7 +533,15 @@ A Git revert can restore a previous desired Kubernetes configuration. However, a
 
 GitOps provides configuration history, reviewable changes, reproducible desired state, and a simple way to restore previous manifests. It does not automatically make every application or database change reversible.
 
-## 10. Drift Correction
+Useful Fleet status checks during this flow are:
+
+```bash
+kubectl -n fleet-local get gitrepos.fleet.cattle.io
+kubectl -n fleet-local get bundles.fleet.cattle.io
+kubectl get bundledeployments.fleet.cattle.io -A
+```
+
+## 11. Drift Correction
 
 Drift means the live cluster no longer matches Git.
 
@@ -450,9 +552,17 @@ Example:
 3. The GitOps controller detects that the cluster differs from Git.
 4. The controller restores `replicas: 3`.
 
-Flux calls this reconciliation. Argo CD reports the application as `OutOfSync` and can self-heal when automated self-healing is enabled.
+Flux calls this reconciliation. Argo CD reports the application as `OutOfSync` and can self-heal when automated self-healing is enabled. Fleet reports externally changed resources as `Modified`. To make Fleet correct drift for this demo, add the following to the `GitRepo` spec:
 
-## 11. Common Troubleshooting Commands
+```yaml
+spec:
+  correctDrift:
+    enabled: true
+```
+
+Fleet drift correction is disabled by default. After enabling it, verify the `GitRepo`, Bundle, and BundleDeployment status rather than repeatedly changing live resources.
+
+## 12. Common Troubleshooting Commands
 
 FluxCD:
 
@@ -479,6 +589,18 @@ kubectl describe application dummy-app -n argocd
 kubectl logs -n argocd deployment/argocd-application-controller
 ```
 
+Fleet:
+
+```bash
+kubectl -n fleet-local get gitrepos.fleet.cattle.io
+kubectl -n fleet-local describe gitrepo.fleet.cattle.io dummy-app
+kubectl -n fleet-local get bundles.fleet.cattle.io
+kubectl get bundledeployments.fleet.cattle.io -A
+kubectl -n cattle-fleet-system get pods
+kubectl -n cattle-fleet-system logs -l app=fleet-controller
+kubectl -n cattle-fleet-system logs -l app=gitjob
+```
+
 Application:
 
 ```bash
@@ -497,7 +619,9 @@ Useful checks:
 - Does the image exist and support the cluster CPU architecture?
 - Are namespace, RBAC, and admission policies blocking the deployment?
 
-## 12. When to Use Which
+For Fleet, follow the status chain from `GitRepo` to Bundle to BundleDeployment. A missing Bundle usually points to repository access, branch, path, or rendering problems. A Bundle without a ready BundleDeployment usually points to targeting or apply problems.
+
+## 13. When to Use Which
 
 FluxCD may fit better when:
 
@@ -513,9 +637,16 @@ Argo CD may fit better when:
 - operators want an easy view of sync and health status;
 - centralized multi-application management is preferred.
 
-Both tools solve the same core problem. The better choice depends on the team's operating model, not on a universal technical winner.
+Fleet may fit better when:
 
-## 13. Practical Recommendations
+- the organization already uses Rancher and wants GitOps status in its UI;
+- one management plane must deploy the same repository content across many clusters;
+- teams prefer Kubernetes CRDs and `kubectl` without requiring a standalone application UI;
+- a supported single-cluster mode is sufficient now, with centralized multi-cluster management as a later option.
+
+All three tools solve the same core problem. The better choice depends on the team's operating model, not on a universal technical winner.
+
+## 14. Practical Recommendations
 
 - Start with one demo app and one cluster path.
 - Keep app manifests small and readable.
@@ -524,10 +655,12 @@ Both tools solve the same core problem. The better choice depends on the team's 
 - Use private repo access through deploy keys, GitHub Apps, or scoped tokens.
 - Do not give CI broad Kubernetes admin credentials unless there is a clear reason.
 - Do not enable auto-prune on important environments until the team understands the blast radius.
-- Use Argo CD UI or Flux status commands during onboarding so people can see reconciliation.
+- Use Argo CD UI, Flux status commands, or Fleet CRD status and Rancher UI integration during onboarding so people can see reconciliation.
+- Choose one controller as the owner of each resource tree. Never point FluxCD, Argo CD, and Fleet at the same demo resources simultaneously.
+- Start Fleet in `fleet-local` for this demo; add multi-cluster targeting only when there is a real cluster-management requirement.
 - Add production patterns later: SSO, RBAC, notifications, progressive delivery, image automation, policy checks, and secret management.
 
-## 14. References
+## 15. References
 
 - [FluxCD Concepts](https://fluxcd.io/flux/concepts/)
 - [FluxCD Get Started](https://fluxcd.io/flux/get-started/)
@@ -540,4 +673,10 @@ Both tools solve the same core problem. The better choice depends on the team's 
 - [Argo CD Application Specification](https://argo-cd.readthedocs.io/en/stable/user-guide/application-specification/)
 - [Argo CD Automated Sync](https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/)
 - [Argo CD Helm](https://argo-cd.readthedocs.io/en/stable/user-guide/helm/)
+- [Fleet Quick Start](https://fleet.rancher.io/tutorials/quickstart)
+- [Fleet GitRepo Resource](https://fleet.rancher.io/reference/ref-gitrepo)
+- [Fleet Git Repository Contents](https://fleet.rancher.io/explanations/gitrepo-content)
+- [Fleet fleet.yaml Reference](https://fleet.rancher.io/reference/ref-fleet-yaml)
+- [Fleet Status Fields](https://fleet.rancher.io/reference/ref-status-fields)
+- [Fleet Troubleshooting](https://fleet.rancher.io/troubleshooting)
 - [Kustomize kustomization.yaml](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/)
